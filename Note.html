@@ -1,0 +1,108 @@
+<html><head></head><body>
+<br>Dcorp error 0x50000
+<br> sfc /scannow <br>
+  <u>powershell admin: Active Win OFFice </u> <br><br>
+  irm https://massgrave.dev/get | iex  <br>
+  irm https://vannamit.github.io/Doc/active.txt |iex <br>
+  irm "https://christitus.com/win" | iex <br>
+  //Devices and Printers <br>
+  Start-Process "shell:::{A8A91A66-3A7D-4424-8D24-04E180695C7A}" <br>
+  //Autologin <br>
+  Invoke-WebRequest -Uri "https://live.sysinternals.com/Autologon.exe" -OutFile "$env:temp\autologin.exe"<br>
+    cmd /c "$env:temp\autologin.exe" /accepteula
+	<br>
+  <textarea rows="1" cols="50" id="myInputactivewin">irm https://get.activated.win |iex
+</textarea>
+  <button onclick="myFunctionactivewin()">Copy CODE</button>
+<script>
+function myFunctionactivewin() {
+  var copyText = document.getElementById("myInputactivewin");
+  copyText.select();
+  copyText.setSelectionRange(0, 99999);
+  navigator.clipboard.writeText(copyText.value);
+}
+</script>
+  <br><br>
+  <u>link máy in các nhà: </u> <br>
+  <a href="https://docs.google.com/spreadsheets/d/1O2z3-PNzMX7PSPJxbuFJiBeZ8iRNa1hY/edit#gid=447973239">______</a>
+</body></html>
+<br><br>
+<u> Chỉnh POWER Perfomance</u><br>
+<a href="https://drive.google.com/drive/folders/1n8mBALWYwZ73xmG2X1yxMAHJw_5Ab7fq">____</a>
+<br><br>
+<a href="https://github.com/securesean/DecryptAutoLogon/blob/main/DecryptAutoLogon/bin/Release/DecryptAutoLogon.exe">Autologinadmin</a><br>
+<br>
+Link Share IT : <br>
+https://sasinvn-my.sharepoint.com/:f:/g/personal/nam_tran_sasin_vn/EgtgabtBUqtGoh-XXw4Xdj0BR8hhr6sfyR3Uok5T6LaFPw <br><br>
+
+*Admin + User(ZaloPC)<br>
+*Driver Printer - Update windows<br>
+*Set IP LAN<br>
+*Never Sleep<br>
+*Change User account Admin<br>
+*Active Servces-Dcorp<br>
+*Set Audio note run system, ultraview<br>
+
+<br>
+<u>Vào Regedit Chặn Mở App </u> <br>
+Bước 1: <br>
+rem open regedit.exe at HKEY_CURRENT_USER\Software\Microsoft <br>
+set "showkey=HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" <br>
+REG ADD "HKCU\Software\Microsoft\Windows\CurrentVersion\Applets\Regedit" /v "LastKey" /d "%showkey%" /f <br>
+start /b regedit <br>
+Bước 2: <br>
+<img src="https://lh3.googleusercontent.com/pw/AP1GczPmS3Rg07ItXKrdLXzuwP9oJnHqtSORJG8OrbgxZTek2g1x6T3dTvgORpDYDZHqDSbtXM9ycjth7A7ppIO9b7qo8Y0G7WUAjU3k58_yIqIEwHg1TD3NcIgLuGbDWkbeHxfAnRG41xwLZKPFnBWDMbTcyg=w918-h373-s-no-gm" alt="New DisallowRun"> <br>
+
+Tạo file DisallowRun như Hình tab bên phải (gán value = 0 sẽ tắt chặn app, value = 1 để bật tính năng)<br>
+Tạo Folder DisallowRun Tab bên trái <br>
+Tạo file như hình và đặt value là tên app để gán không cho mở App <br>
+<img src="https://lh3.googleusercontent.com/pw/AP1GczNFWRxv9DEWZMT9yBv_Bc2SLqSQetYsVF45wPBG1uMT9qBvZ5VYyfBto5OThAHisZa50XGxXKBwBADJNL4vruhKeLYyUsTi-X_Eeu9x1aZ92dnCCgMxEnhIz-jUUis1e9wvQWT88Ye3GVMgsuDU0kC5OQ=w821-h402-s-no-gm?authuser=0" alt="Name App"><br>
+<br>
+<br>
+<textarea rows="4" cols="120" id="myInput">REG ADD HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer /v DisallowRun /t REG_DWORD /reg:32 /d 1
+REG ADD HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\DisallowRun /v 2 /t REG_SZ /d Zalo.exe
+</textarea>
+
+<button onclick="myFunction()">Copy CODE</button>
+<script>
+function myFunction() {
+  // Get the text field
+  var copyText = document.getElementById("myInput");
+
+  // Select the text field
+  copyText.select();
+  copyText.setSelectionRange(0, 99999); // For mobile devices
+
+  // Copy the text inside the text field
+  navigator.clipboard.writeText(copyText.value);
+}
+</script>
+<br>
+
+<u>Cmd active Quyền Run-STOP service trên Tài khoản User:</u><br>
+<br>Bước 1: mở cmd admin <br>
+<br>Bước 2: wmic useraccount get name,sid (lấy SID tài khoản cần cấp quyền)<br>
+<br>
+SERVICE DCORP:
+<br>
+<textarea rows="5" cols="145" id="myInput1">cd C:\Users\Admin
+sc sdset D__RK7_FARCARD_FARCARDS "D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;PASTE_SID)"
+sc sdset SkyMonitorAgent "D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;PASTE_SID)"
+Pause
+</textarea>
+
+<button onclick="myFunction1()">Copy CODE</button>
+<script>
+function myFunction1() {
+  // Get the text field
+  var copyText = document.getElementById("myInput1");
+
+  // Select the text field
+  copyText.select();
+  copyText.setSelectionRange(0, 99999); // For mobile devices
+
+  // Copy the text inside the text field
+  navigator.clipboard.writeText(copyText.value);
+}
+</script>
+<br>
