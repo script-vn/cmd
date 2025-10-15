@@ -45,38 +45,6 @@ https://sasinvn-my.sharepoint.com/:f:/g/personal/nam_tran_sasin_vn/EgtgabtBUqtGo
 
 <br>
 <u>Vào Regedit Chặn Mở App </u> <br>
-Bước 1: <br>
-rem open regedit.exe at HKEY_CURRENT_USER\Software\Microsoft <br>
-set "showkey=HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" <br>
-REG ADD "HKCU\Software\Microsoft\Windows\CurrentVersion\Applets\Regedit" /v "LastKey" /d "%showkey%" /f <br>
-start /b regedit <br>
-Bước 2: <br>
-<img src="https://lh3.googleusercontent.com/pw/AP1GczPmS3Rg07ItXKrdLXzuwP9oJnHqtSORJG8OrbgxZTek2g1x6T3dTvgORpDYDZHqDSbtXM9ycjth7A7ppIO9b7qo8Y0G7WUAjU3k58_yIqIEwHg1TD3NcIgLuGbDWkbeHxfAnRG41xwLZKPFnBWDMbTcyg=w918-h373-s-no-gm" alt="New DisallowRun"> <br>
-
-Tạo file DisallowRun như Hình tab bên phải (gán value = 0 sẽ tắt chặn app, value = 1 để bật tính năng)<br>
-Tạo Folder DisallowRun Tab bên trái <br>
-Tạo file như hình và đặt value là tên app để gán không cho mở App <br>
-<img src="https://lh3.googleusercontent.com/pw/AP1GczNFWRxv9DEWZMT9yBv_Bc2SLqSQetYsVF45wPBG1uMT9qBvZ5VYyfBto5OThAHisZa50XGxXKBwBADJNL4vruhKeLYyUsTi-X_Eeu9x1aZ92dnCCgMxEnhIz-jUUis1e9wvQWT88Ye3GVMgsuDU0kC5OQ=w821-h402-s-no-gm?authuser=0" alt="Name App"><br>
-<br>
-<br>
-<textarea rows="4" cols="120" id="myInput">REG ADD HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer /v DisallowRun /t REG_DWORD /reg:32 /d 1
-REG ADD HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\DisallowRun /v 2 /t REG_SZ /d Zalo.exe
-</textarea>
-
-<button onclick="myFunction()">Copy CODE</button>
-<script>
-function myFunction() {
-  // Get the text field
-  var copyText = document.getElementById("myInput");
-
-  // Select the text field
-  copyText.select();
-  copyText.setSelectionRange(0, 99999); // For mobile devices
-
-  // Copy the text inside the text field
-  navigator.clipboard.writeText(copyText.value);
-}
-</script>
 <br>
 
 <u>Cmd active Quyền Run-STOP service trên Tài khoản User:</u><br>
@@ -106,3 +74,4 @@ function myFunction1() {
 }
 </script>
 <br>
+
