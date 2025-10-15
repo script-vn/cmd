@@ -7,7 +7,7 @@
   irm "https://christitus.com/win" | iex <br>
   //Devices and Printers <br>
   Start-Process "shell:::{A8A91A66-3A7D-4424-8D24-04E180695C7A}" <br>
-  //Autologin <br>
+  <u>//Autologin-admin </u><br>
   Invoke-WebRequest -Uri "https://live.sysinternals.com/Autologon.exe" -OutFile "$env:temp\autologin.exe"<br>
     cmd /c "$env:temp\autologin.exe" /accepteula
 	<br>
@@ -74,6 +74,7 @@ function myFunction1() {
 }
 </script>
 <br>
+
 
 
 
