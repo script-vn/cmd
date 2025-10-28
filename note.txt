@@ -1,0 +1,11 @@
+*Admin + User(ZaloPC)
+*Driver Printer - Update windows
+*Set IP LAN
+*Never Sleep
+*Change User account Admin
+*Active Servces-Dcorp
+*Set Audio note run system, ultraview(Pass + Auto run)
+
+Accept Services : irm byvn.net/accept-sv | iex
+Tắt ZALO PC : irm byvn.net/zalo-deny | iex
+IT SHARE : irm byvn.net/itshare | iex
