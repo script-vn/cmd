@@ -6,6 +6,6 @@
 *Active Servces-Dcorp
 *Set Audio note run system, ultraview(Pass + Auto run)
 
-Accept Services : irm byvn.net/accept-sv | iex
-Tắt ZALO PC : irm byvn.net/zalo-deny | iex
-IT SHARE : irm byvn.net/itshare | iex
+Accept Services : /accept-sv
+Tắt ZALO PC : /zalo-deny
+IT SHARE : /itshare
