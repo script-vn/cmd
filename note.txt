@@ -1,6 +1,16 @@
 link rút gọn printer.ps1 :irm byvn.net/tx94|iex
+*Admin + User(ZaloPC)
+*Driver Printer - Update windows
+*Set IP LAN
+*Never Sleep
+*Change User account Admin
+*Active Servces-Dcorp
+*Set Audio note run system, ultraview(Pass + Auto run)
+
 Accept Services : irm byvn.net/accept-sv | iex
 Tắt ZALO PC : irm byvn.net/zalo-deny | iex
+IT SHARE : irm byvn.net/itshare | iex
+
 Dcorp error 0x50000
 sfc /scannow
 powershell admin: Active Win OFFice
@@ -34,7 +44,7 @@ https://sasinvn-my.sharepoint.com/:f:/g/personal/nam_tran_sasin_vn/EgtgabtBUqtGo
 *Never Sleep
 *Change User account Admin
 *Active Servces-Dcorp
-*Set Audio note run system, ultraview
+*Set Audio note run system, ultraview(Pass + Auto run)
 
 Vào Regedit Chặn Mở App
 Bước 1:
