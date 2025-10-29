@@ -1,4 +1,4 @@
-# cmd
+#cmd
 #Quick command run
 <html lang="en"><head>
   <meta charset="UTF-8">
