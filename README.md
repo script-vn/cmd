@@ -1,13 +1,11 @@
 
-#Quick command run
-
+<P style="color: #00FF00 ">Quick command run <P>
 <html lang="en-US"><head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- Begin Jekyll SEO tag v2.8.0 -->
-<title>cmd | Quick command run</title>
 <meta name="generator" content="Jekyll v3.10.0">
 <meta property="og:title" content="cmd">
 <meta property="og:locale" content="en_US">
@@ -46,30 +44,7 @@
 <p>#Quick command run</p>
 
   <meta charset="UTF-8">
-  
 
-    
-
-    
-
-    
-
-    
-
-
-
-  
-    
-
-
-  
-
-    
-  
-  
-
-  
-  
 <style>
 html, body {
   height: 100%;
