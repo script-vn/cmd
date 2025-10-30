@@ -1,47 +1,12 @@
-
-<P style="color: #00FF00 ">Quick command run <P>
 <html lang="en-US"><head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<!-- Begin Jekyll SEO tag v2.8.0 -->
-<meta name="generator" content="Jekyll v3.10.0">
-<meta property="og:title" content="cmd">
-<meta property="og:locale" content="en_US">
-<meta name="description" content="Quick command run">
-<meta property="og:description" content="Quick command run">
-<link rel="canonical" href="https://script-vn.github.io/cmd/">
-<meta property="og:url" content="https://script-vn.github.io/cmd/">
-<meta property="og:site_name" content="cmd">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary">
-<meta property="twitter:title" content="cmd">
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"WebSite","description":"Quick command run","headline":"cmd","name":"cmd","url":"https://script-vn.github.io/cmd/"}</script>
-<!-- End Jekyll SEO tag -->
-
-    <link rel="stylesheet" href="/cmd/assets/css/style.css?v=703abf3b204478649e92e5df2da2b550e8643a2c">
-    <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
-
-<!-- Setup Google Analytics -->
-
-
-
-<!-- You can set your favicon here -->
-<!-- link rel="shortcut icon" type="image/x-icon" href="/cmd/favicon.ico" -->
-
-<!-- end custom head snippets -->
-
-  </head>
-  <body translate="no">
-    <div class="container-lg px-3 my-5 markdown-body">
       
-      <h1><a href="https://script-vn.github.io/cmd/">cmd</a></h1>
+</head><body><p style="color: #00FF00 ">Quick command run </p><div class="container-lg px-3 my-5 markdown-body">
+      
+      
       
 
       
-<p>#Quick command run</p>
+
 
   <meta charset="UTF-8">
 
@@ -1383,6 +1348,16 @@ body {
     </div>
     
     
+  
+
+
+<p></p><p></p>
+
+
+      
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/anchor-js/4.1.0/anchor.min.js" integrity="sha256-lZaRhKri35AyJSypXXs4o6OPFTbTmUoltBbDCbdzegg=" crossorigin="anonymous"></script>
+    <script>anchors.add();</script>
   
 
 </body></html>
