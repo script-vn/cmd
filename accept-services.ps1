@@ -1,9 +1,3 @@
-# $sid = Read-Host "input SID User:"
-
-# Da chinh sua
-
-
-
 $sidList = @(wmic useraccount get name,sid | Select-String "S-1")
 Write-Output "Chon USER cap quyen:`n"
 
@@ -20,6 +14,7 @@ foreach ($entry in $sidList) {
 
 $sidInput = Read-Host "`nInput SID of USER: "
 $userFound = $false
+$nameFound = ""
 
 foreach ($entry in $sidList) {
     $line = $entry.Line
@@ -30,21 +25,34 @@ foreach ($entry in $sidList) {
     if ($sid -eq $sidInput) {
         Write-Output "Cap Quyen Cho: $name"
         $userFound = $true
+	$nameFound = $name
         break
     }
 }
 
 if (-not $userFound) {
     Write-Output "`nSID not found!!`n"
+	exit
 }
 
 cd C:\Users\Admin
 do {
     $servicename = Read-Host "Nhap Services-Name: "
     if (![string]::IsNullOrWhiteSpace($servicename)) {
-      #  $sid = (whoami /user | Select-String -Pattern "S-1.*").Matches.Value
         $sdString = "D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;{0})" -f $sid
-        sc.exe sdset $servicename $sdString
+        try {
+            $result = sc.exe sdset $servicename $sdString 2>&1
+            if ($result -match "Access is denied" -or $result -match "Khong Du Quyen") {
+                Write-Output "`n❌ Can chay voi **Administrator**."
+                exit
+            } else {
+                Write-Output "`n✅ Accepted service '$servicename'."
+            }
+        } catch {
+            Write-Output "`n❌ Error sdset: $_"
+            exit
+        }
+
     }
 } while (![string]::IsNullOrWhiteSpace($servicename))
 
