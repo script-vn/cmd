@@ -11,10 +11,10 @@ foreach ($entry in $sidList) {
     $parts = $line -split '\s+'
     $name = $parts[0]
     $sid = $parts[1]
-    Write-Output "USER: $name : $sid"
+    Write-Output "USER: $name : SID: $sid"
 }
 
-$sidInput = Read-Host "SID input"
+$sidInput = Read-Host "`nSID input:`n"
 $userFound = $false
 
 foreach ($entry in $sidList) {
@@ -24,27 +24,27 @@ foreach ($entry in $sidList) {
     $sid = $parts[1]
 
     if ($sid -eq $sidInput) {
-        Write-Output "`nXac Nhan: $name : $sid"
+        Write-Output "`nUser : $name"
         $userFound = $true
         break
     }
 }
 
 if (-not $userFound) {
-    Write-Output "`nSID not found!!"
+    Write-Output "`nSID not found!!`n"
 }
 
 cd C:\Users\Admin
 do {
-    $servicename = Read-Host "Nhap Services-Name or Press Enter to exit:"
+    $servicename = Read-Host "`nNhap Services-Name: "
     
     if (![string]::IsNullOrWhiteSpace($servicename)) {
       #  $sid = (whoami /user | Select-String -Pattern "S-1.*").Matches.Value
         $sdString = "D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;{0})" -f $sid
         
-        Write-Host "Cap Quyen Services : $servicename"
+        Write-Host "`nCap Quyen Services : $servicename"
         sc.exe sdset $servicename $sdString
     }
 } while (![string]::IsNullOrWhiteSpace($servicename))
 
-Write-Host "Bye!."
+Write-Host "`nBye!."
