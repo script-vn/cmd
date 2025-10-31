@@ -2,7 +2,7 @@
 
 # Da chinh sua
 $sidList = @(wmic useraccount get name,sid | Select-String "S-1")
-$sidListFiltered = $sidList | Where-Object { $_.Line -match "1006" }
+$sidListFiltered = $sidList | Where-Object { $_.Line -match "100z" }
 
 if ($sidListFiltered.Count -gt 0) {
     foreach ($entry in $sidListFiltered) {
