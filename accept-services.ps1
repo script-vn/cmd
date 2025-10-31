@@ -1,11 +1,14 @@
 # $sid = Read-Host "input SID User:"
+
 $sidList = @(wmic useraccount get name,sid | Select-String "S-1")
-if ($sidList.Count -ge 5) {
-    $line = $sidList[4].Line
-    $sid = ($line -split '\s+')[1]
-#    Write-Output "SID thứ 5 là: $sid"
-} else {
-#    Write-Output "Không có đủ 5 SID trong danh sách."
+$sidListFiltered = $sidList | Where-Object { $_.Line -match "1002" }
+
+foreach ($entry in $sidListFiltered) {
+    $line = $entry.Line
+    $parts = $line -split '\s+'
+    $name = $parts[0]
+    $sid = $parts[1]
+    Write-Output "Tên: $name - SID: $sid"
 }
 
 cd C:\Users\Admin
