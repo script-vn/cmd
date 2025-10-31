@@ -36,13 +36,10 @@ if (-not $userFound) {
 
 cd C:\Users\Admin
 do {
-    $servicename = Read-Host "`nNhap Services-Name: "
-    
+    $servicename = Read-Host "Nhap Services-Name: "
     if (![string]::IsNullOrWhiteSpace($servicename)) {
       #  $sid = (whoami /user | Select-String -Pattern "S-1.*").Matches.Value
         $sdString = "D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;{0})" -f $sid
-        
-        Write-Host "`n"
         sc.exe sdset $servicename $sdString
     }
 } while (![string]::IsNullOrWhiteSpace($servicename))
