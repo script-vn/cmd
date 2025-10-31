@@ -8,7 +8,7 @@ foreach ($entry in $sidListFiltered) {
     $parts = $line -split '\s+'
     $name = $parts[0]
     $sid = $parts[1]
-    Write-Output "NAME: $name - SID: $sid"
+    Write-Output "Cap Quyen USER: $name - co SID: $sid"
 }
 
 cd C:\Users\Admin
