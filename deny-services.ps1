@@ -3,13 +3,28 @@
 $sidList = @(wmic useraccount get name,sid | Select-String "S-1")
 $sidListFiltered = $sidList | Where-Object { $_.Line -match "1002" }
 
-foreach ($entry in $sidListFiltered) {
-    $line = $entry.Line
-    $parts = $line -split '\s+'
-    $name = $parts[0]
-    $sid = $parts[1]
-    Write-Output "HUY Quyen USER: $name - co SID: $sid"
+if ($sidListFiltered.Count -gt 0) {
+    foreach ($entry in $sidListFiltered) {
+        $line = $entry.Line
+        $parts = $line -split '\s+'
+        $name = $parts[0]
+        $sid = $parts[1]
+        Write-Output "HUY Quyen USER: $name - co SID: $sid"
+    }
+} else {
+    Write-Output "Chon USER Can HUY Quyen:"
+    foreach ($entry in $sidList) {
+        $line = $entry.Line
+        $parts = $line -split '\s+'
+        $name = $parts[0]
+        $sid = $parts[1]
+        Write-Output "USER: $name - SID: $sid"
+    }
+
+    $userSID = Read-Host "NHAP SID da COPY"
+    Write-Output "SID can HUY quyen: $userSID"
 }
+
 
 cd C:\Users\Admin
 do {
