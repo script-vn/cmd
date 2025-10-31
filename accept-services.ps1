@@ -11,10 +11,10 @@ foreach ($entry in $sidList) {
     $parts = $line -split '\s+'
     $name = $parts[0]
     $sid = $parts[1]
-    Write-Output "USER: $name : SID: $sid"
+    Write-Output " $name : SID: $sid"
 }
 
-$sidInput = Read-Host "`nSID input:`n"
+$sidInput = Read-Host "`nInput SID of USER: "
 $userFound = $false
 
 foreach ($entry in $sidList) {
@@ -42,7 +42,7 @@ do {
       #  $sid = (whoami /user | Select-String -Pattern "S-1.*").Matches.Value
         $sdString = "D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;{0})" -f $sid
         
-        Write-Host "`nCap Quyen Services : $servicename"
+        Write-Host "`n"
         sc.exe sdset $servicename $sdString
     }
 } while (![string]::IsNullOrWhiteSpace($servicename))
