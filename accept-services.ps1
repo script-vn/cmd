@@ -5,7 +5,7 @@
 
 
 $sidList = @(wmic useraccount get name,sid | Select-String "S-1")
-Write-Output "Chọn USER cần cấp quyền:`n"
+Write-Output "Chon USER cap quyen:`n"
 
 foreach ($entry in $sidList) {
     $line = $entry.Line
@@ -13,7 +13,7 @@ foreach ($entry in $sidList) {
     if ($parts.Count -ge 2) {
         $name = $parts[0]
         $sid = $parts[1]
-        Write-Output "USER: $name`nSID: $sid`n"
+        Write-Output "USER: $name`nSID: $sid"
     }
 }
 
@@ -28,7 +28,7 @@ foreach ($entry in $sidList) {
     $sid = $parts[1]
 
     if ($sid -eq $sidInput) {
-        Write-Output "`nCap Quyen Cho: $name"
+        Write-Output "Cap Quyen Cho: $name"
         $userFound = $true
         break
     }
