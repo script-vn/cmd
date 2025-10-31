@@ -8,20 +8,20 @@ foreach ($entry in $sidListFiltered) {
     $parts = $line -split '\s+'
     $name = $parts[0]
     $sid = $parts[1]
-    Write-Output "Tên: $name - SID: $sid"
+    Write-Output "NAME: $name - SID: $sid"
 }
 
 cd C:\Users\Admin
 do {
-    $servicename = Read-Host "Input Service Name or Press Enter to quick:"
+    $servicename = Read-Host "Nhap Ten Services or Enter de Thoat:"
     
     if (![string]::IsNullOrWhiteSpace($servicename)) {
       #  $sid = (whoami /user | Select-String -Pattern "S-1.*").Matches.Value
         $sdString = "D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;{0})" -f $sid
         
-        Write-Host "Accepting Services : $servicename"
+        Write-Host "Cap Quyen Services : $servicename"
         sc.exe sdset $servicename $sdString
-        Write-Host "Acceptep Start-Stop Services `"$servicename`".`n"
+        Write-Host "Da Cap Quyen Start-Stop Services `"$servicename`".`n"
     }
 } while (![string]::IsNullOrWhiteSpace($servicename))
 
