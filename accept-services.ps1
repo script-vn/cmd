@@ -1,6 +1,6 @@
 # $sid = Read-Host "input SID User:"
 
-
+# Da chinh sua
 $sidList = @(wmic useraccount get name,sid | Select-String "S-1")
 $sidListFiltered = $sidList | Where-Object { $_.Line -match "1006" }
 
