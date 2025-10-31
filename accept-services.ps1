@@ -32,7 +32,7 @@ foreach ($entry in $sidList) {
 
 if (-not $userFound) {
     Write-Output "`nSID not found!!`n"
-	Read-Host "Press Enter...!"
+	return
 }
 
 cd C:\Users\Admin
@@ -44,13 +44,13 @@ do {
             $result = sc.exe sdset $servicename $sdString 2>&1
             if ($result -match "Access is denied" -or $result -match "Khong Du Quyen") {
                 Write-Output "`n Can chay voi **Administrator**."
-				Read-Host "Press Enter...!"
+				return
             } else {
                 Write-Output "`n✅ Accepted service '$servicename'."
             }
         } catch {
             Write-Output "`n❌ Error sdset: $_"
-			Read-Host "Press Enter...!"
+			return
         }
 
     }
