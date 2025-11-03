@@ -12,7 +12,7 @@ foreach ($entry in $sidList) {
 }
 
 
-$sidInput = Read-Host "`nInput SID of USER: "
+$sidInput = Read-Host "`nInput SID of USER "
 $userFound = $false
 $nameFound = ""
 
@@ -37,7 +37,7 @@ if (-not $userFound) {
 
 cd C:\Users\Admin
 do {
-    $servicename = Read-Host "Nhap Services-Name: "
+    $servicename = Read-Host "Nhap Services-Name "
     if (![string]::IsNullOrWhiteSpace($servicename)) {
         try {
             $service = Get-Service -Name $servicename -ErrorAction Stop
