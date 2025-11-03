@@ -65,7 +65,7 @@ try {
             $canStart = $service.Status -eq 'Stopped'
             $canStop = $service.CanStop
 
-            Write-Output "`n'$displayName': $($service.Status)"
+            Write-Output "'$displayName' checking is $($service.Status)"
 
             if ($canStart) {
                 Write-Output "Ready Start."
