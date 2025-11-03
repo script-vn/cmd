@@ -64,26 +64,17 @@ try {
             $service.Refresh()
             $canStart = $service.Status -eq 'Stopped'
             $canStop = $service.CanStop
-            $canRestart = $canStop -and $canStart
 
             Write-Output "`n'$displayName': $($service.Status)"
 
             if ($canStart) {
                 Write-Output "Ready Start."
             } else {
-                Write-Output "Can't Start."
-            }
-
-            if ($canStop) {
-                Write-Output "Ready Stop."
-            } else {
-                Write-Output "Can't Stop."
-            }
-
-            if ($canRestart) {
-                Write-Output "Ready Restart."
-            } else {
-                Write-Output "Can't Restart."
+                if ($canStop) {
+                Write-Output "Ready Stop/Restart."
+            	} else {
+                Write-Output "Ready Start."
+            	}
             }
         } catch {
             Write-Output "Can't Check Services. $_"
