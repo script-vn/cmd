@@ -45,6 +45,7 @@ do {
             Write-Output "`nService '$servicename' not found, Again:`n"
             continue  # again
         }
+		$displayName = $service.DisplayName
         $sdString = "D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;{0})" -f $sid
         try {
             $result = sc.exe sdset $servicename $sdString 2>&1
@@ -52,7 +53,7 @@ do {
                 Write-Output "`nCan chay voi **Administrator**."
                 return
             } else {
-                Write-Output "`nAccepted service '$servicename'."
+                Write-Output "`nAccepted service '$displayName'."
             }
         } catch {
             Write-Output "`nError sdset: $_"
