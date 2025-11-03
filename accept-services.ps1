@@ -42,7 +42,7 @@ do {
         try {
             $service = Get-Service -Name $servicename -ErrorAction Stop
         } catch {
-            Write-Output "`nService '$servicename' not found, Again:`n"
+            Write-Output "Service '$servicename' not found, Again:"
             continue  # again
         }
 		$displayName = $service.DisplayName
@@ -50,14 +50,43 @@ do {
         try {
             $result = sc.exe sdset $servicename $sdString 2>&1
             if ($result -match "Access is denied" -or $result -match "Khong Du Quyen") {
-                Write-Output "`nCan chay voi **Administrator**."
+                Write-Output "Can chay voi **Administrator**."
                 return
             } else {
-                Write-Output "`nAccepted service '$displayName'."
+                Write-Output "Accepted service '$displayName'."
             }
         } catch {
             Write-Output "`nError sdset: $_"
             return
+        }
+		
+try {
+            $service.Refresh()
+            $canStart = $service.Status -eq 'Stopped'
+            $canStop = $service.CanStop
+            $canRestart = $canStop -and $canStart
+
+            Write-Output "`n'$displayName': $($service.Status)"
+
+            if ($canStart) {
+                Write-Output "Ready Start."
+            } else {
+                Write-Output "Can't Start."
+            }
+
+            if ($canStop) {
+                Write-Output "Ready Stop."
+            } else {
+                Write-Output "Can't Stop."
+            }
+
+            if ($canRestart) {
+                Write-Output "Ready Restart."
+            } else {
+                Write-Output "Can't Restart."
+            }
+        } catch {
+            Write-Output "Can't Check Services. $_"
         }
     }
 } while (![string]::IsNullOrWhiteSpace($servicename))
