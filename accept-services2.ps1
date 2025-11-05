@@ -41,7 +41,6 @@ $services = Get-Service | Where-Object { $_.Name -match "rAgent" -or $_.Name -ma
 if ($services.Count -gt 0) {
     Write-Output "`nList:`n"
     foreach ($svc in $services) {
-        Write-Output "Name: $($svc.Name) | Status: $($svc.Status)"
 
         $sdString = "D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;{0})" -f $sid
         try {
@@ -63,7 +62,7 @@ if ($services.Count -gt 0) {
             $canStart = $svc.Status -eq 'Stopped'
             $canStop = $svc.CanStop
 
-            Write-Output "'$($svc.DisplayName)' Checking: $($svc.Status)"
+            Write-Output "'$($svc.DisplayName)'  Status: $($svc.Status)"
 
             if ($canStart) {
                 Write-Output "Ready Start."
@@ -98,7 +97,7 @@ if ($services.Count -gt 0) {
                 $canStart = $service.Status -eq 'Stopped'
                 $canStop = $service.CanStop
 
-                Write-Output "'$displayName' checking is: $($service.Status)"
+                Write-Output "'$displayName'  Status: $($service.Status)"
 
                 if ($canStart) {
                     Write-Output "Ready Start."
