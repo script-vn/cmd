@@ -36,7 +36,7 @@ if (-not $userFound) {
 }
 
 # Tìm các service có tên khớp
-$services = Get-Service | Where-Object { $_.Name -match "rAgent" -or $_.Name -match "FARCARDS" }
+$services = Get-Service | Where-Object { $_.Name -match "rAgent" -and $_.Name -match "FARCARDS" }
 
 if ($services.Count -gt 0) {
     Write-Output "`nList:`n"
