@@ -220,4 +220,30 @@ $buttonSetIP.Add_Click({
     }
 })
 
+
+# Xử lý khi nhấn nút Driver Printer
+$buttonDriverPrinter.Add_Click({
+    try {
+        Write-Log "Dang tai xuong file driver may in..."
+        $url = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/EaSWlvxwl7RIljE-aEhCU3ABAKTlJG2jTIFv6hJxR9-5xA?download=1"
+        $destination = "D:\DriverPrinter.printerExport"
+        Invoke-WebRequest -Uri $url -OutFile $destination
+        Write-Log "Da tai xuong file driver tai $destination"
+
+        # Mở phần mềm PrintBrmUi.exe
+        $printBrmPath = "C:\Windows\System32\PrintBrmUi.exe"
+        if (Test-Path $printBrmPath) {
+            Start-Process $printBrmPath
+            Write-Log "Da mo PrintBrmUi.exe de import driver."
+        } else {
+            Write-Log "Khong tim thay PrintBrmUi.exe tai $printBrmPath"
+            [System.Windows.Forms.MessageBox]::Show("Khong tim thay PrintBrmUi.exe", "Loi", "OK", "Error")
+        }
+    } catch {
+        Write-Log "Loi khi tai hoac mo driver: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show("Loi: $($_.Exception.Message)", "Loi", "OK", "Error")
+    }
+})
+
+
 [void]$form.ShowDialog()
