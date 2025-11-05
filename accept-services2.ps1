@@ -36,7 +36,7 @@ if (-not $userFound) {
 }
 
 # Tìm các service có tên khớp
-$services = Get-Service | Where-Object { $_.Name -match "rAgent" -and $_.Name -match "FARCARDS" }
+$services = Get-Service | Where-Object { $_.Name -match "rAgent" -or $_.Name -match "FARCARDS" }
 
 if ($services.Count -gt 0) {
     Write-Output "`nList:`n"
@@ -77,8 +77,10 @@ if ($services.Count -gt 0) {
     }
 } else {
     Write-Output "`nnot found services. Input: .`n"
+    }
+    
     do {
-        $servicename = Read-Host "Nhap Services-Name "
+        $servicename = Read-Host "Nhap Services-Name khac or Enter to end! "
         if (![string]::IsNullOrWhiteSpace($servicename)) {
             try {
                 $service = Get-Service -Name $servicename -ErrorAction Stop
@@ -109,7 +111,7 @@ if ($services.Count -gt 0) {
             } catch {
                 Write-Output "Service '$servicename' Can't Check Services: $_"
             }
-        }
+        
     } while (![string]::IsNullOrWhiteSpace($servicename))
 }
 
