@@ -50,7 +50,8 @@ if ($services.Count -gt 0) {
                 Write-Output "Run **Administrator**."
                 return
             } else {
-                Write-Output "Accepted service '$($svc.DisplayName)'."
+                	Write-Output "`nName: $($svc.Name)"
+                    sc.exe sdset $svc.Name $sdString
             }
         } catch {
             Write-Output "`nError sdset: $_"
@@ -62,7 +63,7 @@ if ($services.Count -gt 0) {
             $canStart = $svc.Status -eq 'Stopped'
             $canStop = $svc.CanStop
 
-            Write-Output "'$($svc.DisplayName)' trạng thái: $($svc.Status)"
+            Write-Output "'$($svc.DisplayName)' Checking: $($svc.Status)"
 
             if ($canStart) {
                 Write-Output "Ready Start."
@@ -89,7 +90,8 @@ if ($services.Count -gt 0) {
                     Write-Output "Run **Administrator**."
                     return
                 } else {
-                    Write-Output "Accepted service '$displayName'."
+                    	Write-Output "`nName: $($svc.Name)"
+                        sc.exe sdset $svc.Name $sdString
                 }
 
                 $service.Refresh()
