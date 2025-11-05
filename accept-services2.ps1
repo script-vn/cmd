@@ -77,8 +77,8 @@ if ($services.Count -gt 0) {
     }
 } else {
     Write-Output "`nnot found services. Input: .`n"
-    }
     
+    }
     do {
         $servicename = Read-Host "Nhap Services-Name khac or Enter to end! "
         if (![string]::IsNullOrWhiteSpace($servicename)) {
@@ -111,8 +111,8 @@ if ($services.Count -gt 0) {
             } catch {
                 Write-Output "Service '$servicename' Can't Check Services: $_"
             }
-        
+        }
     } while (![string]::IsNullOrWhiteSpace($servicename))
-}
+
 
 Write-Host "`nEnd script."
