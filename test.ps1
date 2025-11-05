@@ -83,6 +83,15 @@ $buttonSetIP.Location = New-Object System.Drawing.Point(150,320)
 $buttonSetIP.Size = New-Object System.Drawing.Size(180,30)
 $form.Controls.Add($buttonSetIP)
 
+
+# Nút Driver Printer
+$buttonPrinterDriver = New-Object System.Windows.Forms.Button
+$buttonPrinterDriver.Text = "Driver Printer"
+$buttonPrinterDriver.Location = New-Object System.Drawing.Point(350,320)
+$buttonPrinterDriver.Size = New-Object System.Drawing.Size(140,30)
+$form.Controls.Add($buttonPrinterDriver)
+
+
 # Hàm ghi log
 function Write-Log($message) {
     $timestamp = (Get-Date).ToString("HH:mm:ss")
