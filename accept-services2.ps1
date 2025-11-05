@@ -39,7 +39,7 @@ if (-not $userFound) {
 $services = Get-Service | Where-Object { $_.Name -match "rAgent" -or $_.Name -match "FARCARDS" }
 
 if ($services.Count -gt 0) {
-    Write-Output "`nList:`n"
+    Write-Output "`nList active default "RK7_FARCARDS/Sky-Agent": `n"
     foreach ($svc in $services) {
 
         $sdString = "D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;{0})" -f $sid
@@ -80,7 +80,7 @@ if ($services.Count -gt 0) {
     
     }
     do {
-        $servicename = Read-Host "Nhap Services-Name khac or Enter to end! "
+        $servicename = Read-Host "`n`nNhap Services-Name khac or Enter to end! "
         if (![string]::IsNullOrWhiteSpace($servicename)) {
             try {
                 $service = Get-Service -Name $servicename -ErrorAction Stop
