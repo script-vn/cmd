@@ -2,13 +2,13 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Quản lý User & Chặn Zalo"
+$form.Text = "Tool Add User & Deny Zalo"
 $form.Size = New-Object System.Drawing.Size(520,380)
 $form.StartPosition = "CenterScreen"
 
 # Label tạo user
 $labelNewUser = New-Object System.Windows.Forms.Label
-$labelNewUser.Text = "Tạo user mới:"
+$labelNewUser.Text = "Add new User:"
 $labelNewUser.Location = New-Object System.Drawing.Point(20,20)
 $labelNewUser.Size = New-Object System.Drawing.Size(100,20)
 $form.Controls.Add($labelNewUser)
@@ -41,14 +41,14 @@ $form.Controls.Add($textFullName)
 
 # Nút tạo user
 $buttonCreateUser = New-Object System.Windows.Forms.Button
-$buttonCreateUser.Text = "Tạo user"
+$buttonCreateUser.Text = "Create user"
 $buttonCreateUser.Location = New-Object System.Drawing.Point(390,40)
 $buttonCreateUser.Size = New-Object System.Drawing.Size(80,25)
 $form.Controls.Add($buttonCreateUser)
 
 # Label chọn user
 $labelUser = New-Object System.Windows.Forms.Label
-$labelUser.Text = "Chọn user:"
+$labelUser.Text = "Select user:"
 $labelUser.Location = New-Object System.Drawing.Point(20,80)
 $labelUser.Size = New-Object System.Drawing.Size(100,20)
 $form.Controls.Add($labelUser)
@@ -62,7 +62,7 @@ $form.Controls.Add($comboBox)
 
 # Nút chặn Zalo
 $buttonExecute = New-Object System.Windows.Forms.Button
-$buttonExecute.Text = "Thực hiện chặn Zalo"
+$buttonExecute.Text = "Run Deny Zalo"
 $buttonExecute.Location = New-Object System.Drawing.Point(150,110)
 $buttonExecute.Size = New-Object System.Drawing.Size(180,30)
 $form.Controls.Add($buttonExecute)
@@ -94,10 +94,10 @@ function LoadUsers($selectUser = $null) {
     $comboBox.Items.Clear()
     $users = Get-LocalUser | Where-Object { $_.Enabled -eq $true -and $_.Name -ne "Admin" } | Select-Object -ExpandProperty Name
     $comboBox.Items.AddRange($users)
-    Write-Log "Đã tải danh sách user."
+    Write-Log "Da tai danh sach user."
     if ($selectUser -and $users -contains $selectUser) {
         $comboBox.SelectedItem = $selectUser
-        Write-Log "Đã chọn user mặc định: $selectUser"
+        Write-Log "Da chon user mac dinh: $selectUser"
     }
 }
 
@@ -109,12 +109,12 @@ $buttonCreateUser.Add_Click({
     $fullName = $textFullName.Text.Trim()
 
     if (-not $newUser) {
-        [System.Windows.Forms.MessageBox]::Show("Vui lòng nhập User name.", "Thông báo", "OK", "Warning")
+        [System.Windows.Forms.MessageBox]::Show("Vui long nhap User name.", "Thong bao", "OK", "Warning")
         return
     }
 
     try {
-        Write-Log "Đang tạo user '$newUser'..."
+        Write-Log "Dang tao user '$newUser'..."
         $password = ConvertTo-SecureString "123" -AsPlainText -Force
         New-LocalUser -Name $newUser -FullName $fullName -Password $password
         Set-LocalUser -Name $newUser -PasswordNeverExpires $true
@@ -123,10 +123,10 @@ $buttonCreateUser.Add_Click({
         LoadUsers $newUser
         $textUserName.Text = ""
         $textFullName.Text = ""
-        Write-Log "Đã tạo user '$newUser' thành công và xóa thông tin nhập."
+        Write-Log "Da tao user '$newUser' thanh cong."
     } catch {
-        Write-Log "Lỗi khi tạo user: $($_.Exception.Message)"
-        [System.Windows.Forms.MessageBox]::Show("Lỗi khi tạo user: $($_.Exception.Message)", "Lỗi", "OK", "Error")
+        Write-Log "Loi khi tao user: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show("Loi khi tao user: $($_.Exception.Message)", "Loi", "OK", "Error")
     }
 })
 
@@ -134,29 +134,29 @@ $buttonCreateUser.Add_Click({
 $buttonExecute.Add_Click({
     $userName = $comboBox.SelectedItem
     if (-not $userName) {
-        [System.Windows.Forms.MessageBox]::Show("Vui lòng chọn user.", "Thông báo", "OK", "Warning")
+        [System.Windows.Forms.MessageBox]::Show("Vui long chon user.", "Thong bao", "OK", "Warning")
         return
     }
 
     try {
-        Write-Log "Đang cấp quyền admin cho user '$userName'..."
+        Write-Log "Dang cap quyen admin cho user '$userName'..."
         Add-LocalGroupMember -Group "Administrators" -Member $userName
-        Write-Log "Đã cấp quyền admin."
+        Write-Log "Da cap quyen admin."
 
         $userProfilePath = "C:\Users\$userName"
         $ntUserDatPath = "$userProfilePath\NTUSER.DAT"
         $hiveName = "HKU\TempHive"
 
         if (-not (Test-Path $ntUserDatPath)) {
-            Write-Log "NTUSER.DAT chưa tồn tại. Đang tạo profile bằng notepad..."
-            $cred = Get-Credential -UserName $userName -Message "Nhập mật khẩu để tạo profile cho user $userName"
+            Write-Log "NTUSER.DAT chua ton tai. Dang tao profile bang notepad..."
+            $cred = Get-Credential -UserName $userName -Message "Nhap mat khau de profile cho user $userName"
             $np = Start-Process -FilePath "notepad.exe" -Credential $cred -PassThru
             Stop-Process -Id $np.Id -Force
-            Write-Log "Đã mở và tắt notepad ngay lập tức để tạo profile."
+            Write-Log "Da mo va tat notepad de tao profile."
         }
 
         if (Test-Path $ntUserDatPath) {
-            Write-Log "Đã tìm thấy NTUSER.DAT. Đang ghi registry chặn Zalo..."
+            Write-Log "Da tim thay NTUSER.DAT. Dang ghi registry chan Zalo..."
             reg load $hiveName $ntUserDatPath | Out-Null
 
             reg add "$hiveName\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v DisallowRun /t REG_DWORD /d 1 /f | Out-Null
@@ -164,50 +164,50 @@ $buttonExecute.Add_Click({
             reg add "$hiveName\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\DisallowRun" /v 2 /t REG_SZ /d ZaloUpdate.exe /f | Out-Null
 
             reg unload $hiveName | Out-Null
-            Write-Log "Đã ghi registry chặn Zalo cho user '$userName'."
+            Write-Log "Da ghi registry chan Zalo cho user '$userName'."
 
-            Write-Log "Đang thu hồi quyền admin của user '$userName'..."
+            Write-Log "Dang thu hoi quyen admin cua user '$userName'..."
             Remove-LocalGroupMember -Group "Administrators" -Member $userName
-            Write-Log "Đã thu hồi quyền admin."
+            Write-Log "Da thu hoi quyen admin."
 
             Start-Process "lusrmgr.msc"
-            Write-Log "Đã mở lusrmgr.msc để chỉnh sửa thủ công nếu cần."
+            Write-Log "Da mo lusrmgr.msc de chinh sua thu cong neu can."
 
-            [System.Windows.Forms.MessageBox]::Show("Đã chặn Zalo cho user '$userName' thành công.", "Thành công", "OK", "Information")
+            [System.Windows.Forms.MessageBox]::Show("Da chan Zalo cho user '$userName' thanh cong.", "Thanh cong", "OK", "Information")
         } else {
-            throw "Không thể tạo NTUSER.DAT cho user $userName."
+            throw "Khong the tao NTUSER.DAT cho user $userName."
         }
     } catch {
-        Write-Log "Lỗi: $($_.Exception.Message)"
-        [System.Windows.Forms.MessageBox]::Show("Lỗi: $($_.Exception.Message)", "Lỗi", "OK", "Error")
+        Write-Log "Loi: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show("Loi: $($_.Exception.Message)", "Loi", "OK", "Error")
     }
 })
 
 # Xử lý khi nhấn nút Set IP LAN & DNS
 $buttonSetIP.Add_Click({
     try {
-        Write-Log "Đang cấu hình IP LAN và DNS..."
+        Write-Log "Dang cau hinh IP LAN va DNS..."
 
         $interface = Get-NetAdapter | Where-Object { $_.Status -eq "Up" } | Select-Object -First 1
         if (-not $interface) {
-            throw "Không tìm thấy card mạng đang hoạt động."
+            throw "Khong tim thay card mang dang hoat dong."
         }
 
         $interfaceName = $interface.Name
-        Write-Log "Đã chọn card mạng: $interfaceName"
+        Write-Log "Da chon card mang: $interfaceName"
 
         # Set IP tĩnh
         New-NetIPAddress -InterfaceAlias $interfaceName -IPAddress "192.168.1.11" -PrefixLength 24 -DefaultGateway "192.168.1.1" -ErrorAction Stop
-        Write-Log "Đã đặt IP: 192.168.1.11, Gateway: 192.168.1.1"
+        Write-Log "Da dat IP: 192.168.1.11, Gateway: 192.168.1.1"
 
         # Set DNS
         Set-DnsClientServerAddress -InterfaceAlias $interfaceName -ServerAddresses ("8.8.8.8","8.8.4.4") -ErrorAction Stop
-        Write-Log "Đã đặt DNS: 8.8.8.8, 8.8.4.4"
+        Write-Log "Da dat DNS: 8.8.8.8, 8.8.4.4"
 
-        [System.Windows.Forms.MessageBox]::Show("Đã cấu hình IP và DNS thành công.", "Thành công", "OK", "Information")
+        [System.Windows.Forms.MessageBox]::Show("Da cau hinh IP và DNS thanh cong.", "Thanh cong", "OK", "Information")
     } catch {
-        Write-Log "Lỗi khi cấu hình IP/DNS: $($_.Exception.Message)"
-        [System.Windows.Forms.MessageBox]::Show("Lỗi: $($_.Exception.Message)", "Lỗi", "OK", "Error")
+        Write-Log "Loi khi cau hinh IP/DNS: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show("Loi: $($_.Exception.Message)", "Loi", "OK", "Error")
     }
 })
 
