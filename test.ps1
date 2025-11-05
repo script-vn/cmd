@@ -222,7 +222,7 @@ $buttonSetIP.Add_Click({
 
 
 # Xử lý khi nhấn nút Driver Printer
-$buttonDriverPrinter.Add_Click({
+$buttonPrinterDriver.Add_Click({
     try {
         Write-Log "Dang tai xuong file driver may in..."
         $url = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/EaSWlvxwl7RIljE-aEhCU3ABAKTlJG2jTIFv6hJxR9-5xA?download=1"
