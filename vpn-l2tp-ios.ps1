@@ -198,7 +198,7 @@ $payloadsXml
 
     # Group Add VPN
     $grpAdd = New-Object System.Windows.Forms.GroupBox
-    $grpAdd.Text = "Thêm VPN"
+    $grpAdd.Text = "Add VPN"
     $grpAdd.Location = New-Object System.Drawing.Point(20, 110)
     $grpAdd.Size = New-Object System.Drawing.Size(1030, 160)
 
@@ -302,7 +302,7 @@ $payloadsXml
 
     # --- Ô tìm kiếm DisplayName + label đếm ---
     $lblSearch = New-Object System.Windows.Forms.Label
-    $lblSearch.Text = "Tìm DisplayName:"
+    $lblSearch.Text = "Search DisplayName:"
     $lblSearch.Location = New-Object System.Drawing.Point(20, 280)
     $lblSearch.AutoSize = $true
 
@@ -311,7 +311,7 @@ $payloadsXml
     $tbSearch.Width = 260
 
     $lblCount = New-Object System.Windows.Forms.Label
-    $lblCount.Text = "Kết quả: 0 / Tổng: 0 | Đã tích: 0"
+    $lblCount.Text = "Result: 0 / Total: 0 | Selected: 0"
     $lblCount.Location = New-Object System.Drawing.Point(420, 280)
     $lblCount.AutoSize = $true
 
@@ -351,7 +351,7 @@ $payloadsXml
     $chkSelectAll.Size = New-Object System.Drawing.Size(15, 15)
     $chkSelectAll.Text = ""
     $tip = New-Object System.Windows.Forms.ToolTip
-    $tip.SetToolTip($chkSelectAll, "Chọn/bỏ chọn tất cả các dòng đang hiển thị")
+    $tip.SetToolTip($chkSelectAll, "Check/unCheck all line show")
     $script:suppressHeaderEvent = $false
 
     function Place-HeaderCheckbox {
@@ -420,7 +420,7 @@ $payloadsXml
             if (-not $row.IsNewRow) { $row.Cells["STT"].Value = $i; $i++ }
         }
         $checkedCount = (Get-CheckedRows).Count
-        $lblCount.Text = "Kết quả: $($grid.Rows.Count) / Tổng: $($dt.Rows.Count) | Đã tích: $checkedCount"
+        $lblCount.Text = "Result: $($grid.Rows.Count) / Total: $($dt.Rows.Count) | Selected: $checkedCount"
 
         $allVisChecked = $true; $hasVisRow = $false
         foreach ($row in $grid.Rows) {
@@ -451,7 +451,7 @@ $payloadsXml
 
     # Buttons (bổ sung Import/Export Excel)
     $btnDelete = New-Object System.Windows.Forms.Button
-    $btnDelete.Text = "Delete Selected (đã tích)"
+    $btnDelete.Text = "Delete Selected (selected)"
     $btnDelete.Location = New-Object System.Drawing.Point(20, 650)
     $btnDelete.Width = 180
 
@@ -466,22 +466,22 @@ $payloadsXml
     $btnImportExcel.Width = 150
 
     $btnExportJson = New-Object System.Windows.Forms.Button
-    $btnExportJson.Text = "Export (JSON) (đã tích)"
+    $btnExportJson.Text = "Export (JSON) (selected)"
     $btnExportJson.Location = New-Object System.Drawing.Point(560, 650)
     $btnExportJson.Width = 190
 
     $btnExportExcel = New-Object System.Windows.Forms.Button
-    $btnExportExcel.Text = "Export (Excel) (đã tích)"
+    $btnExportExcel.Text = "Export (Excel) (selected)"
     $btnExportExcel.Location = New-Object System.Drawing.Point(770, 650)
     $btnExportExcel.Width = 190
 
     $btnSave = New-Object System.Windows.Forms.Button
-    $btnSave.Text = "Save .mobileconfig (đã tích)"
+    $btnSave.Text = "Save .mobileconfig (selected)"
     $btnSave.Location = New-Object System.Drawing.Point(20, 690)
     $btnSave.Width = 240
 
     $btnExit = New-Object System.Windows.Forms.Button
-    $btnExit.Text = "Thoát"
+    $btnExit.Text = "Exit"
     $btnExit.Location = New-Object System.Drawing.Point(280, 690)
     $btnExit.Width = 120
 
@@ -502,7 +502,7 @@ $payloadsXml
         if ([string]::IsNullOrWhiteSpace($d) -or [string]::IsNullOrWhiteSpace($r) -or
             [string]::IsNullOrWhiteSpace($u) -or [string]::IsNullOrWhiteSpace($p) -or
             [string]::IsNullOrWhiteSpace($s)) {
-            [System.Windows.Forms.MessageBox]::Show("Vui lòng nhập đầy đủ DisplayName, RemoteAddress, AuthName, AuthPassword, SharedSecret.",
+            [System.Windows.Forms.MessageBox]::Show("Please input All DisplayName, RemoteAddress, AuthName, AuthPassword, SharedSecret.",
                 "Thiếu thông tin", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
             return
         }
@@ -531,7 +531,7 @@ $payloadsXml
     $btnDelete.Add_Click({
         $checked = Get-CheckedRows
         if ($checked.Count -eq 0) {
-            [System.Windows.Forms.MessageBox]::Show("Chưa tích dòng nào trong cột OverridePrimary.", "Thông báo",
+            [System.Windows.Forms.MessageBox]::Show("Not Have Select OverridePrimary.", "Notification",
                 [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
             return
         }
@@ -543,13 +543,13 @@ $payloadsXml
     $btnExportJson.Add_Click({
         $checked = Get-CheckedRows
         if ($checked.Count -eq 0) {
-            [System.Windows.Forms.MessageBox]::Show("Chưa tích dòng nào để export.", "Thông báo",
+            [System.Windows.Forms.MessageBox]::Show("Not Have Select export.", "Notification",
                 [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
             return
         }
         $sfd = New-Object System.Windows.Forms.SaveFileDialog
         $sfd.Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*"
-        $sfd.Title = "Lưu danh sách VPN (JSON) - chỉ các dòng đã tích"
+        $sfd.Title = "Save list VPN (JSON) - only line selected"
         $sfd.FileName = "vpn-selected.json"
         if ($sfd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             try {
@@ -567,10 +567,10 @@ $payloadsXml
                     }
                 }
                 ($list | ConvertTo-Json -Depth 5) | Out-File -LiteralPath $sfd.FileName -Encoding UTF8
-                [System.Windows.Forms.MessageBox]::Show("Đã lưu JSON: $($sfd.FileName)", "OK",
+                [System.Windows.Forms.MessageBox]::Show("Saved JSON: $($sfd.FileName)", "OK",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
             } catch {
-                [System.Windows.Forms.MessageBox]::Show("Lỗi export: $($_.Exception.Message)", "Error",
+                [System.Windows.Forms.MessageBox]::Show("Error export: $($_.Exception.Message)", "Error",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
             }
         }
@@ -584,12 +584,12 @@ $payloadsXml
             $baseId      = $tbBaseId.Text.Trim()
 
             if ([string]::IsNullOrWhiteSpace($profileName) -or [string]::IsNullOrWhiteSpace($rootId) -or [string]::IsNullOrWhiteSpace($baseId)) {
-                throw "Profile Display Name, Root/Base PayloadIdentifier không được để trống."
+                throw "Profile Display Name, Root/Base PayloadIdentifier have not Null."
             }
 
             $checked = Get-CheckedRows
             if ($checked.Count -eq 0) {
-                throw "Chưa tích dòng nào trong cột OverridePrimary. Hãy tích các dòng bạn muốn đưa vào file."
+                throw "Not Have selected OverridePrimary. Please select line you want in file."
             }
 
             $rows = @()
@@ -610,17 +610,17 @@ $payloadsXml
 
             $sfd = New-Object System.Windows.Forms.SaveFileDialog
             $sfd.Filter = "Mobileconfig (*.mobileconfig)|*.mobileconfig|All files (*.*)|*.*"
-            $sfd.Title = "Lưu file .mobileconfig (chỉ các dòng đã tích)"
+            $sfd.Title = "Save file .mobileconfig (only line selected)"
             $sfd.FileName = (Sanitize-Identifier $profileName) + ".mobileconfig"
             if ($sfd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
                 [System.IO.File]::WriteAllText($sfd.FileName, $xml, [System.Text.Encoding]::UTF8)
                 [System.Windows.Forms.MessageBox]::Show(
-                    "Đã tạo file: $($sfd.FileName)`nHãy AirDrop/email file này vào iPhone/iPad để cài.",
-                    "Thành công", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information
+                    "Created file: $($sfd.FileName)`nLetgo AirDrop/email file here in iPhone/iPad to setup.",
+                    "Success", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information
                 ) | Out-Null
             }
         } catch {
-            [System.Windows.Forms.MessageBox]::Show("Lỗi khi tạo .mobileconfig: $($_.Exception.Message)", "Error",
+            [System.Windows.Forms.MessageBox]::Show("Error when create .mobileconfig: $($_.Exception.Message)", "Error",
                 [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
         }
     })
@@ -629,13 +629,13 @@ $payloadsXml
     $btnImportJson.Add_Click({
         $ofd = New-Object System.Windows.Forms.OpenFileDialog
         $ofd.Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*"
-        $ofd.Title = "Chọn file JSON để import"
+        $ofd.Title = "Select file JSON to import"
         if ($ofd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             try {
                 $json = Get-Content -LiteralPath $ofd.FileName -Raw -ErrorAction Stop
                 $items = $json | ConvertFrom-Json
                 if (-not ($items -is [System.Collections.IEnumerable])) { $items = @($items) }
-                if (-not $items -or $items.Count -eq 0) { throw "File JSON không có dữ liệu." }
+                if (-not $items -or $items.Count -eq 0) { throw "File JSON not have data." }
 
                 $dt.Rows.Clear()
                 foreach ($it in $items) {
@@ -650,11 +650,11 @@ $payloadsXml
                     $dt.Rows.Add($row)
                 }
                 $dt.DefaultView.RowFilter = ""; $tbSearch.Text = ""; Update-Stt
-                [System.Windows.Forms.MessageBox]::Show("Import thành công: $($items.Count) mục.", "OK",
+                [System.Windows.Forms.MessageBox]::Show("Import success: $($items.Count) List.", "OK",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
 
             } catch {
-                [System.Windows.Forms.MessageBox]::Show("Lỗi import: $($_.Exception.Message)", "Error",
+                [System.Windows.Forms.MessageBox]::Show("Error import: $($_.Exception.Message)", "Error",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
             }
         }
@@ -664,12 +664,12 @@ $payloadsXml
     $btnImportExcel.Add_Click({
         $ofd = New-Object System.Windows.Forms.OpenFileDialog
         $ofd.Filter = "Excel Workbook (*.xlsx)|*.xlsx|Excel 97-2003 (*.xls)|*.xls|All files (*.*)|*.*"
-        $ofd.Title = "Chọn file Excel để import"
+        $ofd.Title = "Select file Excel to import"
         if ($ofd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             try {
                 $excel = New-Object -ComObject Excel.Application
             } catch {
-                [System.Windows.Forms.MessageBox]::Show("Không thể khởi tạo Excel COM. Hãy đảm bảo Microsoft Excel đã được cài đặt.", "Lỗi",
+                [System.Windows.Forms.MessageBox]::Show("Can't initia Excel COM. For sure Microsoft Excel setup done.", "Error",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
                 return
             }
@@ -680,7 +680,7 @@ $payloadsXml
                 $used = $ws.UsedRange
                 $rowCount = $used.Rows.Count
                 $colCount = $used.Columns.Count
-                if ($rowCount -lt 2) { throw "Sheet đầu không có dữ liệu (cần ít nhất 1 dòng header + 1 dòng dữ liệu)." }
+                if ($rowCount -lt 2) { throw "Header has no data (requires at least 1 row header + 1 row data)." }
 
                 # Đọc header (row 1)
                 $headers = @()
@@ -703,7 +703,7 @@ $payloadsXml
 
                 # Kiểm tra tối thiểu
                 if (-not $idxDisplay -or -not $idxRemote -or -not $idxAuth) {
-                    throw "Thiếu các cột bắt buộc: DisplayName, RemoteAddress, AuthName."
+                    throw "Missing required columns: DisplayName, RemoteAddress, AuthName."
                 }
 
                 $dt.Rows.Clear()
@@ -742,12 +742,12 @@ $payloadsXml
                 [GC]::Collect(); [GC]::WaitForPendingFinalizers()
 
                 $dt.DefaultView.RowFilter = ""; $tbSearch.Text = ""; Update-Stt
-                [System.Windows.Forms.MessageBox]::Show("Import Excel thành công.", "OK",
+                [System.Windows.Forms.MessageBox]::Show("Import Excel Success.", "OK",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
 
             } catch {
                 try { if ($wb) { $wb.Close($false) } if ($excel) { $excel.Quit() } } catch {}
-                [System.Windows.Forms.MessageBox]::Show("Lỗi import Excel: $($_.Exception.Message)", "Error",
+                [System.Windows.Forms.MessageBox]::Show("Error import Excel: $($_.Exception.Message)", "Error",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
             }
         }
@@ -757,21 +757,21 @@ $payloadsXml
     $btnExportExcel.Add_Click({
         $checked = Get-CheckedRows
         if ($checked.Count -eq 0) {
-            [System.Windows.Forms.MessageBox]::Show("Chưa tích dòng nào để export Excel.", "Thông báo",
+            [System.Windows.Forms.MessageBox]::Show("No lines have been checked to export to Excel.", "Notification",
                 [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
             return
         }
 
         $sfd = New-Object System.Windows.Forms.SaveFileDialog
         $sfd.Filter = "Excel Workbook (*.xlsx)|*.xlsx|Excel 97-2003 (*.xls)|*.xls"
-        $sfd.Title = "Lưu Excel - chỉ các dòng đã tích"
+        $sfd.Title = "Save Excel - only selected rows"
         $sfd.FileName = "vpn-selected.xlsx"
 
         if ($sfd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
             try {
                 $excel = New-Object -ComObject Excel.Application
             } catch {
-                [System.Windows.Forms.MessageBox]::Show("Không thể khởi tạo Excel COM. Hãy đảm bảo Microsoft Excel đã được cài đặt.", "Lỗi",
+                [System.Windows.Forms.MessageBox]::Show("Could not initialize Excel COM. Make sure Microsoft Excel is installed.", "Error",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
                 return
             }
@@ -819,12 +819,12 @@ $payloadsXml
                 [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($excel)
                 [GC]::Collect(); [GC]::WaitForPendingFinalizers()
 
-                [System.Windows.Forms.MessageBox]::Show("Đã xuất Excel: $($sfd.FileName)", "OK",
+                [System.Windows.Forms.MessageBox]::Show("Exported Excel: $($sfd.FileName)", "OK",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
 
             } catch {
                 try { if ($wb) { $wb.Close($false) } if ($excel) { $excel.Quit() } } catch {}
-                [System.Windows.Forms.MessageBox]::Show("Lỗi export Excel: $($_.Exception.Message)", "Error",
+                [System.Windows.Forms.MessageBox]::Show("Error export Excel: $($_.Exception.Message)", "Error",
                     [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
             }
         }
