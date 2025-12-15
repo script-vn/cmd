@@ -1,0 +1,392 @@
+
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+#=== Utility: Check admin rights ===
+function Test-IsAdmin {
+    $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+    return $principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+}
+
+#=== Form setup ===
+$form = New-Object System.Windows.Forms.Form
+$form.Text = "Tool Add User & Deny Zalo (Safe)"
+$form.Size = New-Object System.Drawing.Size(520,400)
+$form.StartPosition = "CenterScreen"
+
+# Label tạo user
+$labelNewUser = New-Object System.Windows.Forms.Label
+$labelNewUser.Text = "Add new User:"
+$labelNewUser.Location = New-Object System.Drawing.Point(20,20)
+$labelNewUser.Size = New-Object System.Drawing.Size(100,20)
+$form.Controls.Add($labelNewUser)
+
+# Label User name
+$labelUserName = New-Object System.Windows.Forms.Label
+$labelUserName.Text = "User name:"
+$labelUserName.Location = New-Object System.Drawing.Point(120,20)
+$labelUserName.Size = New-Object System.Drawing.Size(100,20)
+$form.Controls.Add($labelUserName)
+
+# TextBox username
+$textUserName = New-Object System.Windows.Forms.TextBox
+$textUserName.Location = New-Object System.Drawing.Point(120,40)
+$textUserName.Size = New-Object System.Drawing.Size(100,20)
+$form.Controls.Add($textUserName)
+
+# Label Full name
+$labelFullName = New-Object System.Windows.Forms.Label
+$labelFullName.Text = "Full name:"
+$labelFullName.Location = New-Object System.Drawing.Point(230,20)
+$labelFullName.Size = New-Object System.Drawing.Size(100,20)
+$form.Controls.Add($labelFullName)
+
+# TextBox full name
+$textFullName = New-Object System.Windows.Forms.TextBox
+$textFullName.Location = New-Object System.Drawing.Point(230,40)
+$textFullName.Size = New-Object System.Drawing.Size(150,20)
+$form.Controls.Add($textFullName)
+
+# Nút tạo user
+$buttonCreateUser = New-Object System.Windows.Forms.Button
+$buttonCreateUser.Text = "Create user"
+$buttonCreateUser.Location = New-Object System.Drawing.Point(390,40)
+$buttonCreateUser.Size = New-Object System.Drawing.Size(100,25)
+$form.Controls.Add($buttonCreateUser)
+
+# Label chọn user
+$labelUser = New-Object System.Windows.Forms.Label
+$labelUser.Text = "Select user:"
+$labelUser.Location = New-Object System.Drawing.Point(20,80)
+$labelUser.Size = New-Object System.Drawing.Size(100,20)
+$form.Controls.Add($labelUser)
+
+# ComboBox user
+$comboBox = New-Object System.Windows.Forms.ComboBox
+$comboBox.Location = New-Object System.Drawing.Point(120,80)
+$comboBox.Size = New-Object System.Drawing.Size(200,20)
+$comboBox.DropDownStyle = "DropDownList"
+$form.Controls.Add($comboBox)
+
+# Nút chặn Zalo
+$buttonExecute = New-Object System.Windows.Forms.Button
+$buttonExecute.Text = "Run Deny Zalo"
+$buttonExecute.Location = New-Object System.Drawing.Point(150,110)
+$buttonExecute.Size = New-Object System.Drawing.Size(180,30)
+$form.Controls.Add($buttonExecute)
+
+# TextBox ghi log
+$logBox = New-Object System.Windows.Forms.TextBox
+$logBox.Location = New-Object System.Drawing.Point(20,150)
+$logBox.Size = New-Object System.Drawing.Size(470,180)
+$logBox.Multiline = $true
+$logBox.ScrollBars = "Vertical"
+$logBox.ReadOnly = $true
+$form.Controls.Add($logBox)
+
+# Nút Set IP LAN và DNS
+$buttonSetIP = New-Object System.Windows.Forms.Button
+$buttonSetIP.Text = "Set IP LAN & DNS"
+$buttonSetIP.Location = New-Object System.Drawing.Point(150,340)
+$buttonSetIP.Size = New-Object System.Drawing.Size(180,30)
+$form.Controls.Add($buttonSetIP)
+
+# Nút Driver Printer
+$buttonPrinterDriver = New-Object System.Windows.Forms.Button
+$buttonPrinterDriver.Text = "Driver Printer"
+$buttonPrinterDriver.Location = New-Object System.Drawing.Point(350,340)
+$buttonPrinterDriver.Size = New-Object System.Drawing.Size(140,30)
+$form.Controls.Add($buttonPrinterDriver)
+
+#=== Logging ===
+function Write-Log($message) {
+    $timestamp = (Get-Date).ToString("HH:mm:ss")
+    $logBox.AppendText("[$timestamp] $message`r`n")
+}
+
+#=== System prerequisites: ProfSvc & Default Profile health ===
+function Ensure-ProfSvcAndDefaultProfileOK {
+    try {
+        $svc = Get-Service -Name "ProfSvc" -ErrorAction Stop
+        if ($svc.StartType -ne "Automatic") { Set-Service -Name "ProfSvc" -StartupType Automatic }
+        if ($svc.Status -ne "Running") { Start-Service -Name "ProfSvc" }
+        Write-Log "ProfSvc OK (Automatic & Running)."
+    } catch {
+        Write-Log "ProfSvc khong kha dung: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show(
+            "User Profile Service khong kha dung. Vui long bat ProfSvc.",
+            "Canh bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
+    }
+
+    $def = "C:\\Users\\Default"
+    if (-not (Test-Path $def)) {
+        Write-Log "Thieu thu muc Default Profile."
+        [System.Windows.Forms.MessageBox]::Show(
+            "Thieu C\\Users\\Default. Vui long khoi phuc Default Profile.",
+            "Canh bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
+    } else {
+        $nt = Join-Path $def "NTUSER.DAT"
+        if (-not (Test-Path $nt)) {
+            Write-Log "Thieu NTUSER.DAT trong Default Profile."
+            [System.Windows.Forms.MessageBox]::Show(
+                "Thieu NTUSER.DAT trong Default Profile. User moi co the bi 'Signing out'.",
+                "Canh bao",
+                [System.Windows.Forms.MessageBoxButtons]::OK,
+                [System.Windows.Forms.MessageBoxIcon]::Warning
+            ) | Out-Null
+        }
+    }
+}
+
+#=== Load danh sách user ===
+function LoadUsers($selectUser = $null) {
+    $comboBox.Items.Clear()
+    $users = Get-LocalUser |
+        Where-Object { $_.Enabled -eq $true -and $_.Name -ne "Admin" } |
+        Select-Object -ExpandProperty Name
+    if ($users) { $comboBox.Items.AddRange($users) }
+    Write-Log "Da tai danh sach user."
+    if ($selectUser -and ($users -contains $selectUser)) {
+        $comboBox.SelectedItem = $selectUser
+        Write-Log "Da chon user mac dinh: $selectUser"
+    }
+}
+
+#=== Lấy Profile path từ Registry ===
+function Get-ProfilePath {
+    param([string]$UserName)
+    try {
+        $sid = (Get-LocalUser -Name $UserName).Sid.Value
+        $regBase = "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList\\$sid"
+        $pip = (Get-ItemProperty -Path $regBase -ErrorAction SilentlyContinue).ProfileImagePath
+        return $pip
+    } catch {
+        return $null
+    }
+}
+
+#=== Bảo đảm tạo profile an toàn ===
+function Ensure-UserProfileCreated {
+    param([string]$UserName)
+
+    # Tạm cấp quyền admin (neu co chinh sach deny logon locally)
+    try { Add-LocalGroupMember -Group "Administrators" -Member $UserName -ErrorAction SilentlyContinue } catch {}
+
+    $cred = Get-Credential -UserName $UserName -Message "Nhap mat khau de tao profile cho user $UserName"
+    $p = Start-Process -FilePath "cmd.exe" -ArgumentList "/c whoami" -Credential $cred -PassThru
+    try { Wait-Process -Id $p.Id -Timeout 30 } catch {}
+
+    # Lay profile path chinh xac tu Registry
+    $profilePath = Get-ProfilePath -UserName $UserName
+    if (-not $profilePath) { throw "Khong tim duoc ProfileImagePath trong Registry cho user $UserName." }
+
+    $ntUserDatPath = Join-Path $profilePath "NTUSER.DAT"
+    if (-not (Test-Path $ntUserDatPath)) { throw "NTUSER.DAT chua ton tai sau khi tao profile." }
+
+    # Thu hoi quyen admin tam thoi
+    try { Remove-LocalGroupMember -Group "Administrators" -Member $UserName -ErrorAction SilentlyContinue } catch {}
+
+    return $ntUserDatPath
+}
+
+#=== Ghi policy chan Zalo ===
+function Set-DenyZalo {
+    param([string]$UserName)
+
+    $ntUserDatPath = Ensure-UserProfileCreated -UserName $UserName
+    $hiveName = "HKU\\TempHive"
+
+    try {
+        Write-Log "Dang load hive NTUSER.DAT..."
+        & reg.exe load $hiveName $ntUserDatPath | Out-Null
+
+        & reg.exe add "$hiveName\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer" /v DisallowRun /t REG_DWORD /d 1 /f | Out-Null
+        & reg.exe add "$hiveName\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\DisallowRun" /v 1 /t REG_SZ /d Zalo.exe /f | Out-Null
+        & reg.exe add "$hiveName\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\\DisallowRun" /v 2 /t REG_SZ /d ZaloUpdate.exe /f | Out-Null
+
+        Write-Log "Da ghi registry chan Zalo cho user '$UserName'."
+    }
+    finally {
+        Write-Log "Dang unload hive..."
+        & reg.exe unload $hiveName | Out-Null
+    }
+}
+
+#=== Tạo user mới ===
+$buttonCreateUser.Add_Click({
+    $newUser = $textUserName.Text.Trim()
+    $fullName = $textFullName.Text.Trim()
+
+    if (-not $newUser) {
+        [System.Windows.Forms.MessageBox]::Show(
+            "Vui long nhap User name.",
+            "Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
+        return
+    }
+
+    if (-not (Test-IsAdmin)) {
+        [System.Windows.Forms.MessageBox]::Show(
+            "Can Admin rights de tao user.",
+            "Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
+        return
+    }
+
+    try {
+        Write-Log "Dang tao user '$newUser'..."
+        $password = ConvertTo-SecureString "123" -AsPlainText -Force
+        New-LocalUser -Name $newUser -FullName $fullName -Password $password -ErrorAction Stop
+        Set-LocalUser -Name $newUser -PasswordNeverExpires $true
+        & net.exe user $newUser /passwordchg:no | Out-Null
+        Add-LocalGroupMember -Group "Users" -Member $newUser -ErrorAction SilentlyContinue
+
+        LoadUsers $newUser
+        $textUserName.Text = ""
+        $textFullName.Text = ""
+        Write-Log "Da tao user '$newUser' thanh cong."
+    } catch {
+        Write-Log "Loi khi tao user: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show(
+            "Loi khi tao user: $($_.Exception.Message)",
+            "Loi",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        ) | Out-Null
+    }
+})
+
+#=== Thực hiện chặn Zalo ===
+$buttonExecute.Add_Click({
+    $userName = $comboBox.SelectedItem
+    if (-not $userName) {
+        [System.Windows.Forms.MessageBox]::Show(
+            "Vui long chon user.",
+            "Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
+        return
+    }
+
+    if (-not (Test-IsAdmin)) {
+        [System.Windows.Forms.MessageBox]::Show(
+            "Can Admin rights de thuc thi.",
+            "Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
+        return
+    }
+
+    try {
+        Write-Log "Dang thuc thi Deny Zalo cho '$userName'..."
+        Set-DenyZalo -UserName $userName
+        [System.Windows.Forms.MessageBox]::Show(
+            "Da chan Zalo cho user '$userName' thanh cong.",
+            "Thanh cong",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Information
+        ) | Out-Null
+    } catch {
+        Write-Log "Loi: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show(
+            "Loi: $($_.Exception.Message)",
+            "Loi",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        ) | Out-Null
+    }
+})
+
+#=== Xử lý khi nhấn nút Set IP LAN & DNS ===
+$buttonSetIP.Add_Click({
+    if (-not (Test-IsAdmin)) {
+        [System.Windows.Forms.MessageBox]::Show(
+            "Can Admin rights de dat IP/DNS.",
+            "Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
+        return
+    }
+    try {
+        Write-Log "Dang cau hinh IP LAN va DNS..."
+        $interface = Get-NetAdapter |
+            Where-Object { $_.Status -eq "Up" } |
+            Select-Object -First 1
+        if (-not $interface) { throw "Khong tim thay card mang dang hoat dong." }
+        $interfaceName = $interface.Name
+        Write-Log "Da chon card mang: $interfaceName"
+        New-NetIPAddress -InterfaceAlias $interfaceName -IPAddress "192.168.1.11" -PrefixLength 24 -DefaultGateway "192.168.1.1" -ErrorAction Stop
+        Write-Log "Da dat IP: 192.168.1.11, Gateway: 192.168.1.1"
+        Set-DnsClientServerAddress -InterfaceAlias $interfaceName -ServerAddresses ("8.8.8.8","8.8.4.4") -ErrorAction Stop
+        Write-Log "Da dat DNS: 8.8.8.8, 8.8.4.4"
+        [System.Windows.Forms.MessageBox]::Show(
+            "Da cau hinh IP va DNS thanh cong.",
+            "Thanh cong",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Information
+        ) | Out-Null
+    } catch {
+        Write-Log "Loi khi cau hinh IP/DNS: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show(
+            "Loi: $($_.Exception.Message)",
+            "Loi",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        ) | Out-Null
+    }
+})
+
+#=== Xử lý khi nhấn nút Driver Printer ===
+$buttonPrinterDriver.Add_Click({
+    try {
+        Write-Log "Dang tai xuong file driver may in..."
+        $url = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/EaSWlvxwl7RIljE-aEhCU3ABAKTlJG2jTIFv6hJxR9-5xA?download=1"
+        $destination = "D:\\DriverPrinter.printerExport"
+        Invoke-WebRequest -Uri $url -OutFile $destination
+        Write-Log "Da tai xuong file driver tai $destination"
+        $printBrmPath = "C:\\Windows\\System32\\PrintBrmUi.exe"
+        if (Test-Path $printBrmPath) {
+            Start-Process $printBrmPath
+            Write-Log "Da mo PrintBrmUi.exe de import driver."
+        } else {
+            Write-Log "Khong tim thay PrintBrmUi.exe tai $printBrmPath"
+            [System.Windows.Forms.MessageBox]::Show(
+                "Khong tim thay PrintBrmUi.exe",
+                "Loi",
+                [System.Windows.Forms.MessageBoxButtons]::OK,
+                [System.Windows.Forms.MessageBoxIcon]::Error
+            ) | Out-Null
+        }
+    } catch {
+        Write-Log "Loi khi tai hoac mo driver: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show(
+            "Loi: $($_.Exception.Message)",
+            "Loi",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        ) | Out-Null
+    }
+})
+
+#=== Form events ===
+$form.Add_Shown({
+    if (-not (Test-IsAdmin)) {
+        Write-Log "Canh bao: nen chay tool voi quyen Admin de tranh loi khi tao/sua user."
+    }
+    Ensure-ProfSvcAndDefaultProfileOK
+    LoadUsers
+})
+
