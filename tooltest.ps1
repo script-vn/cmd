@@ -88,6 +88,13 @@ $logBox.ScrollBars = "Vertical"
 $logBox.ReadOnly = $true
 $form.Controls.Add($logBox)
 
+# Nút Resources
+$buttonResources = New-Object System.Windows.Forms.Button
+$buttonResources.Text = "Resources"
+$buttonResources.Location = New-Object System.Drawing.Point(20, 320)
+$buttonResources.Size = New-Object System.Drawing.Size(120, 30)
+$form.Controls.Add($buttonResources)
+
 # Nút Set IP LAN và DNS
 $buttonSetIP = New-Object System.Windows.Forms.Button
 $buttonSetIP.Text = "Set IP LAN & DNS"
@@ -245,6 +252,44 @@ $buttonExecute.Add_Click({
         [System.Windows.Forms.MessageBox]::Show("Loi: $($_.Exception.Message)","Loi",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
     }
 })
+
+
+# Xử lý khi nhấn nút Resources
+$buttonResources.Add_Click({
+    try {
+        Write-Log "Dang mo trang Resources..."
+        $url = "https://sasinvn-my.sharepoint.com/:f:/g/personal/nam_tran_sasin_vn/EgtgabtBUqtGoh-XXw4Xdj0BR8hhr6sfyR3Uok5T6LaFPw"
+
+        # Thử mở bằng Chrome nếu có, nếu không thì dùng browser mặc định
+        $chromePaths = @(
+            "$Env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+            "$Env:ProgramFiles(x86)\Google\Chrome\Application\chrome.exe"
+        )
+
+        $chromeExe = $null
+        foreach ($p in $chromePaths) {
+            if (Test-Path $p) { $chromeExe = $p; break }
+        }
+
+        if (-not $chromeExe) {
+            # Nếu chrome không nằm ở vị trí chuẩn, thử gọi theo tên (PATH)
+            $chromeExe = "chrome.exe"
+        }
+
+        try {
+            Start-Process $chromeExe $url -ErrorAction Stop
+            Write-Log "Da mo Chrome toi Resources."
+        } catch {
+            Write-Log "Khong mo duoc bang Chrome, dang mo bang trinh duyet mac dinh..."
+            Start-Process $url
+            Write-Log "Da mo trang Resources bang trinh duyet mac dinh."
+        }
+    } catch {
+        Write-Log "Loi khi mo Resources: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show("Loi khi mo Resources: $($_.Exception.Message)", "Loi", "OK", "Error")
+    }
+})
+
 
 #=== Sự kiện nút Set IP LAN & DNS ===
 $buttonSetIP.Add_Click({
