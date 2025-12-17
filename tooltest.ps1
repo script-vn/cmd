@@ -87,6 +87,13 @@ $logBox.Multiline = $true
 $logBox.ScrollBars = "Vertical"
 $logBox.ReadOnly = $true
 $form.Controls.Add($logBox)
+$logBox.Text = "*Admin + User(ZaloPC)
+*Driver Printer - Update windows
+*Set IP LAN
+*Never Sleep
+*Change User account Admin
+*Active Servces-Dcorp
+*Set Audio note run system, ultraview(Pass + Auto run)"
 
 # Nút Resources
 $buttonResources = New-Object System.Windows.Forms.Button
