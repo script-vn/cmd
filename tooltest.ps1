@@ -109,6 +109,15 @@ $buttonPrinterDriver.Location = New-Object System.Drawing.Point(350,320)
 $buttonPrinterDriver.Size = New-Object System.Drawing.Size(140,30)
 $form.Controls.Add($buttonPrinterDriver)
 
+
+# Nút Set Permissions Dcorp
+$buttonSetPerm = New-Object System.Windows.Forms.Button
+$buttonSetPerm.Text = "Set Permissions Dcorp"
+$buttonSetPerm.Location = New-Object System.Drawing.Point(20, 280)   # bạn có thể chỉnh vị trí tùy ý
+$buttonSetPerm.Size = New-Object System.Drawing.Size(180, 30)
+$form.Controls.Add($buttonSetPerm)
+
+
 #=== Logging ===
 function Write-Log($message) {
     $timestamp = (Get-Date).ToString("HH:mm:ss")
@@ -335,6 +344,65 @@ $buttonPrinterDriver.Add_Click({
         [System.Windows.Forms.MessageBox]::Show("Loi: $($_.Exception.Message)","Loi",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
     }
 })
+
+
+# Handler nút Set Permissions Dcorp
+$buttonSetPerm.Add_Click({
+    try {
+        Write-Log "Dang thiet lap quyen Dcorp cho cac dich vu (rAgent, FARCARDS)..."
+
+        # Lấy user hiện đăng nhập và SID (ưu tiên .NET, fallback WMI nếu cần)
+        try {
+            $username = $env:USERNAME
+            $sid = ([System.Security.Principal.WindowsIdentity]::GetCurrent()).User.Value
+            Write-Log "User dang login: $username"
+            Write-Log "SID: $sid"
+        } catch {
+            Write-Log "Khong lay duoc SID bang .NET, dang thu bang WMI..."
+            $loggedInUser = (Get-WmiObject -Class Win32_ComputerSystem).UserName
+            $username = $loggedInUser.Split('\')[-1]
+            $sid = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $username }).SID
+            Write-Log "User dang login (WMI): $username"
+            Write-Log "SID (WMI): $sid"
+        }
+
+        if (-not $sid) {
+            throw "Khong xac dinh duoc SID cua user $username."
+        }
+
+        # Tìm các dịch vụ cần đặt quyền
+        $services = Get-Service | Where-Object { $_.Name -match "rAgent" -or $_.Name -match "FARCARDS" }
+        if (-not $services -or $services.Count -eq 0) {
+            Write-Log "Khong tim thay dich vu nao co ten khop 'rAgent' hoac 'FARCARDS'."
+            return
+        }
+
+        # Xây chuỗi Security Descriptor (DACL) cấp quyền cho SID người dùng
+        # (A;;RPWPCR;;;{SID}) => Allow: Read Property, Write Property, Change Config, v.v. trên service
+        foreach ($svc in $services) {
+            Write-Log ("`nDich vu: {0}" -f $svc.Name)
+            $sdString = ("D:(A;;CCLCSWLOCRRC;;;AU)(A;;CCDCLCSWRPWPDTLOCRSDRCWDWO;;;BA)(A;;CCLCSWRPWPDTLOCRRC;;;SY)(A;;RPWPCR;;;{0})" -f $sid)
+            Write-Log "DACL moi: $sdString"
+
+            try {
+                # Dùng sc.exe sdset
+                $proc = Start-Process -FilePath "sc.exe" -ArgumentList @("sdset",$svc.Name,$sdString) -PassThru -WindowStyle Hidden -Wait
+                if ($proc.ExitCode -eq 0) {
+                    Write-Log "=> Dat quyen thanh cong cho dich vu '$($svc.Name)'."
+                } else {
+                    Write-Log "=> Loi: sc.exe tra ve ExitCode $($proc.ExitCode) cho dich vu '$($svc.Name)'."
+                }
+            } catch {
+                Write-Log "=> Loi khi thiet lap quyen cho '$($svc.Name)': $($_.Exception.Message)"
+            }
+        }
+
+        Write-Log "Hoan tat thiet lap quyen Dcorp."
+    } catch {
+        Write-Log "Loi tong the: $($_.Exception.Message)"
+    }
+})
+
 
 #=== Sự kiện Form Shown: nạp user & kiểm tra dịch vụ ===
 $form.Add_Shown({
