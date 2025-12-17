@@ -113,7 +113,7 @@ $form.Controls.Add($buttonPrinterDriver)
 # Nút Set Permissions Dcorp
 $buttonSetPerm = New-Object System.Windows.Forms.Button
 $buttonSetPerm.Text = "Set Permissions Dcorp"
-$buttonSetPerm.Location = New-Object System.Drawing.Point(20, 280)   # bạn có thể chỉnh vị trí tùy ý
+$buttonSetPerm.Location = New-Object System.Drawing.Point(20, 360)   # bạn có thể chỉnh vị trí tùy ý
 $buttonSetPerm.Size = New-Object System.Drawing.Size(180, 30)
 $form.Controls.Add($buttonSetPerm)
 
