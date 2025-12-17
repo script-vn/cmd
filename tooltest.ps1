@@ -125,6 +125,14 @@ $buttonSetPerm.Size = New-Object System.Drawing.Size(180, 30)
 $form.Controls.Add($buttonSetPerm)
 
 
+# Nút Open Printers
+$buttonOpenPrinters = New-Object System.Windows.Forms.Button
+$buttonOpenPrinters.Text = "Open Printers"
+$buttonOpenPrinters.Location = New-Object System.Drawing.Point(220, 360)
+$buttonOpenPrinters.Size = New-Object System.Drawing.Size(140, 30)
+$form.Controls.Add($buttonOpenPrinters)
+
+
 #=== Logging ===
 function Write-Log($message) {
     $timestamp = (Get-Date).ToString("HH:mm:ss")
@@ -407,6 +415,18 @@ $buttonSetPerm.Add_Click({
         Write-Log "Hoan tat thiet lap quyen Dcorp."
     } catch {
         Write-Log "Loi tong the: $($_.Exception.Message)"
+    }
+})
+
+
+# Xử lý khi nhấn nút Open Printers
+$buttonOpenPrinters.Add_Click({
+    try {
+        Write-Log "Dang mo cua so Devices and Printers..."
+        Start-Process "shell:::{A8A91A66-3A7D-4424-8D24-04E180695C7A}"
+        Write-Log "Da mo Devices and Printers."
+    } catch {
+        Write-Log "Loi khi mo Devices and Printers: $($_.Exception.Message)"
     }
 })
 
