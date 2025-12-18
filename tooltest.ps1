@@ -86,7 +86,6 @@ $logBox.Multiline = $true
 $logBox.ScrollBars = "Vertical"
 $logBox.ReadOnly = $true
 $form.Controls.Add($logBox)
-$logBox.Text = "đã mở log... fdsfsdfs. fdsfdsf .sdfdsfsdf .sdfsdfdf fdsfdsf fdsfdsf"
 
 $noteBox = New-Object System.Windows.Forms.TextBox
 $noteBox.Location = New-Object System.Drawing.Point(320,110)
@@ -132,6 +131,14 @@ $buttonOpenPrinters.Text = "Open Printers"
 $buttonOpenPrinters.Location = New-Object System.Drawing.Point(220, 320)
 $buttonOpenPrinters.Size = New-Object System.Drawing.Size(140, 30)
 $form.Controls.Add($buttonOpenPrinters)
+
+
+# Nút Change UAC Settings
+$buttonUAC = New-Object System.Windows.Forms.Button
+$buttonUAC.Text = "Change UAC Settings"
+$buttonUAC.Location = New-Object System.Drawing.Point(380, 320)  # đổi vị trí nếu cần
+$buttonUAC.Size = New-Object System.Drawing.Size(140, 30)
+$form.Controls.Add($buttonUAC)
 
 
 #=== Logging ===
@@ -428,6 +435,26 @@ $buttonOpenPrinters.Add_Click({
         Write-Log "Da mo Devices and Printers."
     } catch {
         Write-Log "Loi khi mo Devices and Printers: $($_.Exception.Message)"
+    }
+})
+
+# Handler: mở cửa sổ đổi mức UAC
+$buttonUAC.Add_Click({
+    try {
+        Write-Log "Dang mo cua so 'Change User Account Control settings'..."
+
+        $uacExe = Join-Path $env:SystemRoot "System32\UserAccountControlSettings.exe"
+        if (Test-Path $uacExe) {
+            Start-Process $uacExe -ErrorAction Stop
+            Write-Log "Da mo UAC bang UserAccountControlSettings.exe."
+        } else {
+            # Fallback qua Control Panel canonical name
+            Write-Log "Khong thay UserAccountControlSettings.exe, dang mo qua Control Panel..."
+            Start-Process "control.exe" -ArgumentList "/name Microsoft.UserAccountControlSettings" -ErrorAction Stop
+            Write-Log "Da mo UAC bang Control Panel."
+        }
+    } catch {
+        Write-Log "Loi khi mo UAC: $($_.Exception.Message)"
     }
 })
 
