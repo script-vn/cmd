@@ -149,6 +149,22 @@ $buttonEditPower.Size = New-Object System.Drawing.Size(146, 30)
 $form.Controls.Add($buttonEditPower)
 
 
+# Nút App volume and device preferences
+$buttonAppVolume = New-Object System.Windows.Forms.Button
+$buttonAppVolume.Text = "App Volume & Device"
+$buttonAppVolume.Location = New-Object System.Drawing.Point(181, 360)
+$buttonAppVolume.Size = New-Object System.Drawing.Size(146, 30)
+$form.Controls.Add($buttonAppVolume)
+
+
+# Nút SFC /SCANNOW
+$buttonSFC = New-Object System.Windows.Forms.Button
+$buttonSFC.Text = "Run SFC /scannow"
+$buttonSFC.Location = New-Object System.Drawing.Point(347, 360)
+$buttonSFC.Size = New-Object System.Drawing.Size(146, 30)
+$form.Controls.Add($buttonSFC)
+
+
 #=== Logging ===
 function Write-Log($message) {
     $timestamp = (Get-Date).ToString("HH:mm:ss")
@@ -489,6 +505,31 @@ $buttonEditPower.Add_Click({
         # Một số bản Windows hỗ trợ tham số phụ cho powercfg.cpl nhưng không nhất quán.
     } catch {
         Write-Log "Loi khi mo Edit Power Plan: $($_.Exception.Message)"
+    }
+})
+
+
+# Handler: mở trang App volume and device preferences
+$buttonAppVolume.Add_Click({
+    try {
+        Write-Log "Dang mo 'App volume and device preferences'..."
+        Start-Process "ms-settings:apps-volume" -ErrorAction Stop
+        Write-Log "Da mo trang App volume & device preferences."
+    } catch {
+        Write-Log "Loi khi mo App volume & device: $($_.Exception.Message)"
+    }
+})
+
+
+# Handler: chạy System File Checker
+$buttonSFC.Add_Click({
+    try {
+        Write-Log "Dang chay 'sfc /scannow' (yeu cau quyen Administrator)..."
+        # Mở cmd nâng quyền và chạy sfc
+        Start-Process -FilePath "cmd.exe" -ArgumentList "/c sfc /scannow" -Verb RunAs -WindowStyle Normal
+        Write-Log "Da goi SFC. Vui long doi tien trinh kiem tra/ sua chua hoan tat trong cua so Command Prompt."
+    } catch {
+        Write-Log "Loi khi chay SFC: $($_.Exception.Message)"
     }
 })
 
