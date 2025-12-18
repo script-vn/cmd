@@ -578,31 +578,50 @@ $buttonBrother.Add_Click({
 # Handler: tải file USBZy303 từ link SharePoint về D:\ và (tuỳ chọn) chạy cài đặt
 $buttonUSB80C.Add_Click({
     try {
-        Write-Log "Dang tai USBZy303 tu link online..."
-        $url = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/IQB-e4-oDqmCQqEJDammgcCSAUSob7nF3HqU8PGYfFwq1IA?download=1"
-
-        # Tên file đích (đặt tên gợi nhớ, bạn có thể đổi nếu muốn)
-        $destDir = "D:\"
+        $url      = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/IQB-e4-oDqmCQqEJDammgcCSAUSob7nF3HqU8PGYfFwq1IA?download=1"
+        $destDir  = "D:\"
         $destFile = Join-Path $destDir "USBZy303_Setup.exe"
+        $minSize  = 1024 * 100  # 100 KB, ngưỡng để nhận diện file "thực" (tránh HTML)
 
-        # Tạo thư mục đích nếu chưa có
         if (-not (Test-Path $destDir)) {
             New-Item -Path $destDir -ItemType Directory -Force | Out-Null
         }
 
-        # Bật TLS 1.2
+        # Hàm phụ: cài đặt nếu file hợp lệ
+        function Install-IfValid($path, $threshold) {
+            if ((Test-Path $path) -and ((Get-Item $path).Length -ge $threshold)) {
+                try { Unblock-File -Path $path } catch { }
+                Write-Log ("Dang chay cai dat: {0}" -f $path)
+                Start-Process $path -Verb RunAs  # UAC prompt
+                return $true
+            } else {
+                Write-Log "File khong hop le hoac khong ton tai."
+                return $false
+            }
+        }
+
+        # 1) Nếu đã có file hợp lệ -> cài luôn, bỏ qua tải
+        if (Install-IfValid -path $destFile -threshold $minSize) {
+            return
+        }
+
+        # 2) Chưa có/không hợp lệ -> tiến hành tải
+        Write-Log "File chua co/khong hop le. Dang tai USBZy303 tu link online..."
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
         try {
             Invoke-WebRequest -Uri $url -OutFile $destFile -UseBasicParsing -ErrorAction Stop
-            Write-Log "Da tai USBZy303 ve: $destFile"
+            Write-Log ("Da tai USBZy303 ve: {0}" -f $destFile)
 
-            # (Tuỳ chọn) chạy cài đặt ngay sau khi tải: bỏ comment dòng dưới nếu muốn auto install
-            # Start-Process $destFile -Verb RunAs
+            # 3) Tải xong -> xác minh & cài
+            if (-not (Install-IfValid -path $destFile -threshold $minSize)) {
+                Write-Log "File tai ve khong hop le (co the la HTML hoac file qua nho)."
+            }
+
         } catch {
-            Write-Log "Khong tai duoc truc tiep (co the can dang nhap SharePoint). Dang mo Chrome de tai thu cong..."
+            # 4) Tải lỗi (thường do cần đăng nhập SharePoint) -> mở trình duyệt
+            Write-Log "Khong tai duoc truc tiep (co the can dang nhap SharePoint). Dang mo trinh duyet..."
             try {
-                # Mở Chrome tới link tải để bạn đăng nhập/tải thủ công
                 $chromePaths = @(
                     "$Env:ProgramFiles\Google\Chrome\Application\chrome.exe",
                     "$Env:ProgramFiles(x86)\Google\Chrome\Application\chrome.exe"
@@ -610,14 +629,15 @@ $buttonUSB80C.Add_Click({
                 $chromeExe = $chromePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
                 if (-not $chromeExe) { $chromeExe = "chrome.exe" }
                 Start-Process $chromeExe $url
-                Write-Log "Da mo Chrome toi trang tai USBZy303."
+                Write-Log "Da mo Chrome toi trang tai USBZy303. Vui long dang nhap va tai thu cong."
             } catch {
-                Write-Log "Loi khi mo Chrome: $($_.Exception.Message). Thu mo bang trinh duyet mac dinh..."
+                Write-Log ("Loi khi mo Chrome: {0}. Thu mo bang trinh duyet mac dinh..." -f $_.Exception.Message)
                 Start-Process $url
             }
         }
+
     } catch {
-        Write-Log "Loi khi xu ly USBZy303: $($_.Exception.Message)"
+        Write-Log ("Loi khi xu ly USBZy303: {0}" -f $_.Exception.Message)
     }
 })
 
