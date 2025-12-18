@@ -13,7 +13,7 @@ function Test-IsAdmin {
 
 #=== Khởi tạo Form & Controls ===
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Tool Support POS Order SASIN - Dev by NamIT"
+$form.Text = "Tool Support IT - Dev by NamIT"
 $form.Size = New-Object System.Drawing.Size(520,400)
 $form.StartPosition = "CenterScreen"
 
@@ -120,7 +120,7 @@ $form.Controls.Add($buttonPrinterDriver)
 # Nút Active Services Dcorp
 $buttonSetPerm = New-Object System.Windows.Forms.Button
 $buttonSetPerm.Text = "Active Services Dcorp"
-$buttonSetPerm.Location = New-Object System.Drawing.Point(15, 320)   # bạn có thể chỉnh vị trí tùy ý
+$buttonSetPerm.Location = New-Object System.Drawing.Point(15, 320)
 $buttonSetPerm.Size = New-Object System.Drawing.Size(146, 30)
 $form.Controls.Add($buttonSetPerm)
 
@@ -136,9 +136,17 @@ $form.Controls.Add($buttonOpenPrinters)
 # Nút Change UAC Settings
 $buttonUAC = New-Object System.Windows.Forms.Button
 $buttonUAC.Text = "Change UAC Settings"
-$buttonUAC.Location = New-Object System.Drawing.Point(347, 320)  # đổi vị trí nếu cần
+$buttonUAC.Location = New-Object System.Drawing.Point(347, 320)
 $buttonUAC.Size = New-Object System.Drawing.Size(146, 30)
 $form.Controls.Add($buttonUAC)
+
+
+# Nút Edit Power Plan
+$buttonEditPower = New-Object System.Windows.Forms.Button
+$buttonEditPower.Text = "Edit Power Plan"
+$buttonEditPower.Location = New-Object System.Drawing.Point(15, 360)
+$buttonEditPower.Size = New-Object System.Drawing.Size(146, 30)
+$form.Controls.Add($buttonEditPower)
 
 
 #=== Logging ===
@@ -455,6 +463,32 @@ $buttonUAC.Add_Click({
         }
     } catch {
         Write-Log "Loi khi mo UAC: $($_.Exception.Message)"
+    }
+})
+
+
+# Handler: mở trang Edit Power Plan / Power Options
+$buttonEditPower.Add_Click({
+    try {
+        Write-Log "Dang mo trang chinh sua Power Plan (Power Options)..."
+
+        # Cách 1: mở Power Options theo canonical name (ổn định trên nhiều bản Windows)
+        try {
+            Start-Process "control.exe" -ArgumentList "/name Microsoft.PowerOptions" -ErrorAction Stop
+            Write-Log "Da mo Power Options qua Control Panel (Microsoft.PowerOptions)."
+        } catch {
+            Write-Log "Khong mo duoc qua canonical name, thu mo bang powercfg.cpl..."
+            # Cách 2: mở trực tiếp applet powercfg.cpl (fallback)
+            Start-Process "control.exe" -ArgumentList "powercfg.cpl" -ErrorAction Stop
+            Write-Log "Da mo Power Options bang powercfg.cpl."
+        }
+
+        # (Tuỳ chọn nâng cao) Nếu muốn cố gắng mở trang 'Edit plan settings' của plan đang dùng:
+        # Lưu ý: Trang Edit plan settings phụ thuộc plan cụ thể và giao diện Control Panel,
+        # nên cách an toàn là mở Power Options để người dùng chọn "Change plan settings".
+        # Một số bản Windows hỗ trợ tham số phụ cho powercfg.cpl nhưng không nhất quán.
+    } catch {
+        Write-Log "Loi khi mo Edit Power Plan: $($_.Exception.Message)"
     }
 })
 
