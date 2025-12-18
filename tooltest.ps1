@@ -246,14 +246,29 @@ function Initialize-LocalUserProfile {
         Write-Log "Da hoan tat sua ACL & owner cho $userProfilePath."
 
         # 4) Đảm bảo Group Policy Client service
+        
+    try {
+    $svc = Get-Service -Name gpsvc -ErrorAction Stop
+
+    if ($svc.Status -ne 'Running') {
+        Write-Log "gpsvc khong chay. Dang thu Start-Service gpsvc..."
         try {
-            $svc = Get-Service -Name gpsvc -ErrorAction Stop
-            if ($svc.Status -ne 'Running') { Start-Service gpsvc }
-            Set-Service gpsvc -StartupType Automatic
-            Write-Log "gpsvc dang chay & Auto."
+            Start-Service gpsvc -ErrorAction Stop
+            Write-Log "gpsvc da chay."
         } catch {
-            Write-Log "Khong kiem tra duoc gpsvc: $($_.Exception.Message)"
+            Write-Log "Khong the start gpsvc: $($_.Exception.Message)"
         }
+    } else {
+        Write-Log "gpsvc dang chay."
+    }
+
+    # Lưu ý: Bo qua Set-Service StartupType vi co the bi Access Denied tren Windows 10/11
+    # Write-Log "Bo qua thay doi StartupType gpsvc (duoc he thong han quyen)."
+
+} catch {
+    Write-Log "Khong kiem tra duoc gpsvc: $($_.Exception.Message)"
+}
+
 
     } catch {
         Write-Log "Loi Initialize-LocalUserProfile: $($_.Exception.Message)"
