@@ -189,6 +189,79 @@ $buttonZY303.Size = New-Object System.Drawing.Size(146, 30)
 $form.Controls.Add($buttonZY303)
 
 
+function Initialize-LocalUserProfile {
+    param(
+        [Parameter(Mandatory=$true)][string]$UserName
+    )
+    try {
+        $sidObj = (Get-LocalUser -Name $UserName).Sid
+        if (-not $sidObj) { throw "Khong lay duoc SID cho user $UserName." }
+        $sid = $sidObj.Value
+
+        $userProfilePath = "C:\Users\$UserName"
+        $defaultProfile  = "C:\Users\Default"
+
+        # 1) Tạo thư mục profile & copy từ Default
+        if (-not (Test-Path $userProfilePath)) {
+            Write-Log "Dang tao profile thu muc: $userProfilePath tu $defaultProfile ..."
+            $null = New-Item -ItemType Directory -Path $userProfilePath -Force
+
+            $robolog = Join-Path $env:TEMP "robocopy_$($UserName)_profile.log"
+            $rc = Start-Process -FilePath "robocopy.exe" `
+                                -ArgumentList @("$defaultProfile", "$userProfilePath", "*", "/E", "/COPYALL", "/R:1", "/W:1", "/NFL", "/NDL", "/NP", "/LOG:$robolog") `
+                                -PassThru -Wait
+            Write-Log "Robocopy exit code: $($rc.ExitCode). Log: $robolog"
+        } else {
+            Write-Log "Thu muc profile da ton tai: $userProfilePath"
+        }
+
+        # 2) Đăng ký ProfileList cho SID
+        $plKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid"
+        if (-not (Test-Path $plKey)) {
+            Write-Log "Dang dang ky ProfileList cho SID: $sid"
+            New-Item -Path $plKey -Force | Out-Null
+        }
+        New-ItemProperty -Path $plKey -Name "ProfileImagePath" -Value $userProfilePath -PropertyType ExpandString -Force | Out-Null
+        New-ItemProperty -Path $plKey -Name "Flags" -Value 0 -PropertyType DWord -Force | Out-Null
+        New-ItemProperty -Path $plKey -Name "State" -Value 0 -PropertyType DWord -Force | Out-Null
+        New-ItemProperty -Path $plKey -Name "RefCount" -Value 0 -PropertyType DWord -Force | Out-Null
+
+        # 3) Sửa quyền & ownership thư mục profile
+        Write-Log "Dang sua ACL & owner cho $userProfilePath ..."
+        # Bật inheritance trước
+        Start-Process -FilePath "icacls.exe" -ArgumentList @("$userProfilePath", "/inheritance:e") -PassThru -Wait | Out-Null
+
+        # Grant Full Control cho user (recursive)
+        $ace = "${UserName}:(OI)(CI)F"      # chú ý dùng ${UserName} để không bị lỗi parser với dấu ':'
+        Start-Process -FilePath "icacls.exe" -ArgumentList @("$userProfilePath", "/grant", $ace, "/T", "/C") -PassThru -Wait | Out-Null
+
+        # Grant Full Control riêng cho NTUSER.DAT
+        $ntDat = Join-Path $userProfilePath "NTUSER.DAT"
+        if (Test-Path $ntDat) {
+            Start-Process -FilePath "icacls.exe" -ArgumentList @("$ntDat", "/grant", "${UserName}:(F)") -PassThru -Wait | Out-Null
+        }
+
+        # Set owner là user (recursive)
+        Start-Process -FilePath "icacls.exe" -ArgumentList @("$userProfilePath", "/setowner", $UserName, "/T", "/C") -PassThru -Wait | Out-Null
+        Write-Log "Da hoan tat sua ACL & owner cho $userProfilePath."
+
+        # 4) Đảm bảo Group Policy Client service
+        try {
+            $svc = Get-Service -Name gpsvc -ErrorAction Stop
+            if ($svc.Status -ne 'Running') { Start-Service gpsvc }
+            Set-Service gpsvc -StartupType Automatic
+            Write-Log "gpsvc dang chay & Auto."
+        } catch {
+            Write-Log "Khong kiem tra duoc gpsvc: $($_.Exception.Message)"
+        }
+
+    } catch {
+        Write-Log "Loi Initialize-LocalUserProfile: $($_.Exception.Message)"
+        throw
+    }
+}
+
+
 #=== Logging ===
 function Write-Log($message) {
     $timestamp = (Get-Date).ToString("HH:mm:ss")
@@ -286,96 +359,40 @@ function LoadUsers {
 #=== Sự kiện nút Create user ===
 $buttonCreateUser.Add_Click({
 
-
 try {
     $newUser  = $textUserName.Text.Trim()
     $fullName = $textFullName.Text.Trim()
-
     if (-not $newUser) {
-        [System.Windows.Forms.MessageBox]::Show(
-            "Vui long nhap User name.",
-            "Thong bao",
-            [System.Windows.Forms.MessageBoxButtons]::OK,
-            [System.Windows.Forms.MessageBoxIcon]::Warning
-        ) | Out-Null
+        [System.Windows.Forms.MessageBox]::Show("Vui long nhap User name.","Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
         return
     }
-
     if (-not (Test-IsAdmin)) {
-        [System.Windows.Forms.MessageBox]::Show(
-            "Can Admin rights de tao user.",
-            "Thong bao",
-            [System.Windows.Forms.MessageBoxButtons]::OK,
-            [System.Windows.Forms.MessageBoxIcon]::Warning
-        ) | Out-Null
+        [System.Windows.Forms.MessageBox]::Show("Can Admin rights de tao user.","Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
         return
     }
 
     Write-Log "Dang tao user '$newUser'..."
     $password = ConvertTo-SecureString "123" -AsPlainText -Force
-
-    # 1) Tạo user cục bộ
     New-LocalUser -Name $newUser -FullName $fullName -Password $password -ErrorAction Stop
     Set-LocalUser -Name $newUser -PasswordNeverExpires $true
     & net.exe user $newUser /passwordchg:no | Out-Null
     Add-LocalGroupMember -Group "Users" -Member $newUser -ErrorAction SilentlyContinue
-    Write-Log "Da tao user '$newUser'. Dang tao profile khong can login..."
+    Write-Log "Da tao user '$newUser'. Dang khoi tao profile khong can login..."
 
-    # 2) Tạo profile C:\Users\<User> từ C:\Users\Default
-    $sidObj = (Get-LocalUser -Name $newUser).Sid
-    if (-not $sidObj) { throw "Khong lay duoc SID cho user $newUser." }
-    $sid = $sidObj.Value
+    # >>> GỌI HÀM FIX PROFILEx ACL <<<
+    Initialize-LocalUserProfile -UserName $newUser
 
-    $userProfilePath = "C:\Users\$newUser"
-    $defaultProfile  = "C:\Users\Default"
-
-    if (-not (Test-Path $userProfilePath)) {
-        Write-Log "Dang tao thu muc profile: $userProfilePath tu $defaultProfile ..."
-        $null = New-Item -ItemType Directory -Path $userProfilePath -Force
-
-        # Robocopy copy đầy đủ cấu trúc + NTUSER.DAT
-        $robolog = Join-Path $env:TEMP "robocopy_$($newUser)_profile.log"
-        $rc = Start-Process -FilePath "robocopy.exe" `
-                            -ArgumentList @("$defaultProfile", "$userProfilePath", "*", "/E", "/COPYALL", "/R:1", "/W:1", "/NFL", "/NDL", "/NP", "/LOG:$robolog") `
-                            -PassThru -Wait
-        Write-Log "Robocopy exit code: $($rc.ExitCode). Log: $robolog"
-    } else {
-        Write-Log "Thu muc profile da ton tai: $userProfilePath"
-    }
-
-    # 3) Đăng ký ProfileList theo SID
-    $plKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid"
-    if (-not (Test-Path $plKey)) {
-        Write-Log "Dang dang ky profile vao ProfileList cho SID: $sid"
-        New-Item -Path $plKey -Force | Out-Null
-    }
-    New-ItemProperty -Path $plKey -Name "ProfileImagePath" -Value $userProfilePath -PropertyType ExpandString -Force | Out-Null
-    New-ItemProperty -Path $plKey -Name "Flags" -Value 0 -PropertyType DWord -Force | Out-Null
-    New-ItemProperty -Path $plKey -Name "State" -Value 0 -PropertyType DWord -Force | Out-Null
-
-    # 4) Cấp quyền Full cho user trên thư mục profile (FIX lỗi $newUser:)
-    Write-Log "Dang cap quyen Full cho user tren $userProfilePath"
-    $ace  = "${newUser}:(OI)(CI)F"   # dùng ${newUser} để tránh lỗi biến + dấu ':'
-    $args = @("$userProfilePath", "/grant", $ace)
-    $ic   = Start-Process -FilePath "icacls.exe" -ArgumentList $args -PassThru -Wait
-    Write-Log "icacls exit code: $($ic.ExitCode)"
-
-    # 5) Hoàn tất – làm sạch form & refresh danh sách
     LoadUsers $newUser
     $textUserName.Text = ""
     $textFullName.Text = ""
-    Write-Log "Da tao user '$newUser' + profile thanh cong (khong can login)."
-
+    Write-Log "Hoan tat tao user '$newUser' + profile (fix GPSVC/Access denied)."
 } catch {
     Write-Log "Loi khi tao user/profile: $($_.Exception.Message)"
-    [System.Windows.Forms.MessageBox]::Show(
-        "Loi khi tao user/profile: $($_.Exception.Message)",
-        "Loi",
-        [System.Windows.Forms.MessageBoxButtons]::OK,
-        [System.Windows.Forms.MessageBoxIcon]::Error
-    ) | Out-Null
+    [System.Windows.Forms.MessageBox]::Show("Loi khi tao user/profile: $($_.Exception.Message)",
+        "Loi",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
 }
-
 
 })
 
