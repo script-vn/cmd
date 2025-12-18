@@ -111,7 +111,7 @@ $form.Controls.Add($buttonSetIP)
 
 # Nút Driver Printer
 $buttonPrinterDriver = New-Object System.Windows.Forms.Button
-$buttonPrinterDriver.Text = "Driver Printer"
+$buttonPrinterDriver.Text = "Setup Driver Full Zy303"
 $buttonPrinterDriver.Location = New-Object System.Drawing.Point(347,280)
 $buttonPrinterDriver.Size = New-Object System.Drawing.Size(146,30)
 $form.Controls.Add($buttonPrinterDriver)
@@ -163,6 +163,30 @@ $buttonSFC.Text = "Run SFC /scannow"
 $buttonSFC.Location = New-Object System.Drawing.Point(347, 360)
 $buttonSFC.Size = New-Object System.Drawing.Size(146, 30)
 $form.Controls.Add($buttonSFC)
+
+
+# Nút Setup May in Brother HL2100D
+$buttonBrother = New-Object System.Windows.Forms.Button
+$buttonBrother.Text = "Setup Brother HL2100D"
+$buttonBrother.Location = New-Object System.Drawing.Point(15, 400)
+$buttonBrother.Size = New-Object System.Drawing.Size(146, 30)
+$form.Controls.Add($buttonBrother)
+
+
+# Nút Check USB Printer Zy303
+$buttonUSB80C = New-Object System.Windows.Forms.Button
+$buttonUSB80C.Text = "USB Printer Zy303"
+$buttonUSB80C.Location = New-Object System.Drawing.Point(181, 400)
+$buttonUSB80C.Size = New-Object System.Drawing.Size(146, 30)
+$form.Controls.Add($buttonUSB80C)
+
+
+# Nút Setup All Printer Zy303
+$buttonZY303 = New-Object System.Windows.Forms.Button
+$buttonZY303.Text = "Set All Zy303"
+$buttonZY303.Location = New-Object System.Drawing.Point(347, 400)
+$buttonZY303.Size = New-Object System.Drawing.Size(146, 30)
+$form.Controls.Add($buttonZY303)
 
 
 #=== Logging ===
@@ -530,6 +554,105 @@ $buttonSFC.Add_Click({
         Write-Log "Da goi SFC. Vui long doi tien trinh kiem tra/ sua chua hoan tat trong cua so Command Prompt."
     } catch {
         Write-Log "Loi khi chay SFC: $($_.Exception.Message)"
+    }
+})
+
+
+# Handler: tải driver Brother về ổ D và (tuỳ chọn) chạy installer
+$buttonBrother.Add_Click({
+    try {
+        Write-Log "Dang tai driver Brother tu link online..."
+        $url = "https://support.brother.com/g/b/downloadhowto.aspx?c=vn&lang=en&prod=hlb2100d_as&os=10013&dlid=dlf106319_000&flang=274&type3=11"
+        $dest = "D:\\Brother_Printer_Driver.exe"
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing -ErrorAction Stop
+        Write-Log "Da tai driver ve: $dest"
+        # (Tuỳ chọn) chạy installer:
+        # Start-Process $dest -Verb RunAs
+    } catch {
+        Write-Log "Loi khi tai driver: $($_.Exception.Message)"
+    }
+})
+
+
+# Handler: tải file USBZy303 từ link SharePoint về D:\ và (tuỳ chọn) chạy cài đặt
+$buttonUSB80C.Add_Click({
+    try {
+        Write-Log "Dang tai USBZy303 tu link online..."
+        $url = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/IQB-e4-oDqmCQqEJDammgcCSAUSob7nF3HqU8PGYfFwq1IA?download=1"
+
+        # Tên file đích (đặt tên gợi nhớ, bạn có thể đổi nếu muốn)
+        $destDir = "D:\"
+        $destFile = Join-Path $destDir "USBZy303_Setup.exe"
+
+        # Tạo thư mục đích nếu chưa có
+        if (-not (Test-Path $destDir)) {
+            New-Item -Path $destDir -ItemType Directory -Force | Out-Null
+        }
+
+        # Bật TLS 1.2
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+        try {
+            Invoke-WebRequest -Uri $url -OutFile $destFile -UseBasicParsing -ErrorAction Stop
+            Write-Log "Da tai USBZy303 ve: $destFile"
+
+            # (Tuỳ chọn) chạy cài đặt ngay sau khi tải: bỏ comment dòng dưới nếu muốn auto install
+            # Start-Process $destFile -Verb RunAs
+        } catch {
+            Write-Log "Khong tai duoc truc tiep (co the can dang nhap SharePoint). Dang mo Chrome de tai thu cong..."
+            try {
+                # Mở Chrome tới link tải để bạn đăng nhập/tải thủ công
+                $chromePaths = @(
+                    "$Env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+                    "$Env:ProgramFiles(x86)\Google\Chrome\Application\chrome.exe"
+                )
+                $chromeExe = $chromePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+                if (-not $chromeExe) { $chromeExe = "chrome.exe" }
+                Start-Process $chromeExe $url
+                Write-Log "Da mo Chrome toi trang tai USBZy303."
+            } catch {
+                Write-Log "Loi khi mo Chrome: $($_.Exception.Message). Thu mo bang trinh duyet mac dinh..."
+                Start-Process $url
+            }
+        }
+    } catch {
+        Write-Log "Loi khi xu ly USBZy303: $($_.Exception.Message)"
+    }
+})
+
+
+# Handler: tải file ZY303 từ link SharePoint về D:\ và (tuỳ chọn) chạy cài đặt
+$buttonZY303.Add_Click({
+    try {
+        Write-Log "Dang tai ZY303 tu link online..."
+        $url = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/IQASdgPSrQPoRbV7YqU8fz55AVWSMES8f86SVr_LjZPn2r4?download=1"
+        $destDir = "D:\"
+        $destFile = Join-Path $destDir "ZY303_Setup.exe"
+        if (-not (Test-Path $destDir)) { New-Item -Path $destDir -ItemType Directory -Force | Out-Null }
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        try {
+            Invoke-WebRequest -Uri $url -OutFile $destFile -UseBasicParsing -ErrorAction Stop
+            Write-Log "Da tai ZY303 ve: $destFile"
+            # Start-Process $destFile -Verb RunAs   # (bỏ comment nếu muốn auto install)
+        } catch {
+            Write-Log "Khong tai duoc truc tiep (co the can dang nhap SharePoint). Dang mo trinh duyet..."
+            try {
+                $chromePaths = @(
+                    "$Env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+                    "$Env:ProgramFiles(x86)\Google\Chrome\Application\chrome.exe"
+                )
+                $chromeExe = $chromePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+                if (-not $chromeExe) { $chromeExe = "chrome.exe" }
+                Start-Process $chromeExe $url
+                Write-Log "Da mo Chrome toi trang tai ZY303."
+            } catch {
+                Write-Log "Loi khi mo Chrome: $($_.Exception.Message). Thu mo bang trinh duyet mac dinh..."
+                Start-Process $url
+            }
+        }
+    } catch {
+        Write-Log "Loi khi xu ly ZY303: $($_.Exception.Message)"
     }
 })
 
