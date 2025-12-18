@@ -283,33 +283,95 @@ function LoadUsers {
     }
 }
 
-#=== Sự kiện nút Create user (giữ nguyên hành vi cũ, nhưng an toàn hơn) ===
+#=== Sự kiện nút Create user ===
 $buttonCreateUser.Add_Click({
-    $newUser = $textUserName.Text.Trim()
+try {
+    $newUser  = $textUserName.Text.Trim()
     $fullName = $textFullName.Text.Trim()
+
     if (-not $newUser) {
-        [System.Windows.Forms.MessageBox]::Show("Vui long nhap User name.","Thong bao",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        [System.Windows.Forms.MessageBox]::Show(
+            "Vui long nhap User name.",
+            "Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
         return
     }
+
     if (-not (Test-IsAdmin)) {
-        [System.Windows.Forms.MessageBox]::Show("Can Admin rights de tao user.","Thong bao",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        [System.Windows.Forms.MessageBox]::Show(
+            "Can Admin rights de tao user.",
+            "Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
         return
     }
-    try {
-        Write-Log "Dang tao user '$newUser'..."
-        $password = ConvertTo-SecureString "123" -AsPlainText -Force
-        New-LocalUser -Name $newUser -FullName $fullName -Password $password -ErrorAction Stop
-        Set-LocalUser -Name $newUser -PasswordNeverExpires $true
-        & net.exe user $newUser /passwordchg:no | Out-Null
-        Add-LocalGroupMember -Group "Users" -Member $newUser -ErrorAction SilentlyContinue
-        LoadUsers $newUser
-        $textUserName.Text = ""
-        $textFullName.Text = ""
-        Write-Log "Da tao user '$newUser' thanh cong."
-    } catch {
-        Write-Log "Loi khi tao user: $($_.Exception.Message)"
-        [System.Windows.Forms.MessageBox]::Show("Loi khi tao user: $($_.Exception.Message)","Loi",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+
+    Write-Log "Dang tao user '$newUser'..."
+    $password = ConvertTo-SecureString "123" -AsPlainText -Force
+
+    # 1) Tạo user cục bộ
+    New-LocalUser -Name $newUser -FullName $fullName -Password $password -ErrorAction Stop
+    Set-LocalUser -Name $newUser -PasswordNeverExpires $true
+    & net.exe user $newUser /passwordchg:no | Out-Null
+    Add-LocalGroupMember -Group "Users" -Member $newUser -ErrorAction SilentlyContinue
+    Write-Log "Da tao user '$newUser'. Dang tao profile khong can login..."
+
+    # 2) Tạo profile C:\Users\<User> từ C:\Users\Default
+    $sidObj = (Get-LocalUser -Name $newUser).Sid
+    if (-not $sidObj) { throw "Khong lay duoc SID cho user $newUser." }
+    $sid = $sidObj.Value
+
+    $userProfilePath = "C:\Users\$newUser"
+    $defaultProfile  = "C:\Users\Default"
+
+    if (-not (Test-Path $userProfilePath)) {
+        Write-Log "Dang tao thu muc profile: $userProfilePath tu $defaultProfile ..."
+        $null = New-Item -ItemType Directory -Path $userProfilePath -Force
+
+        # Dùng robocopy để copy đầy đủ cấu trúc + NTUSER.DAT
+        $robolog = Join-Path $env:TEMP "robocopy_$($newUser)_profile.log"
+        $rc = Start-Process -FilePath "robocopy.exe" `
+                            -ArgumentList @("$defaultProfile", "$userProfilePath", "*", "/E", "/COPYALL", "/R:1", "/W:1", "/NFL", "/NDL", "/NP", "/LOG:$robolog") `
+                            -PassThru -Wait
+        Write-Log "Robocopy exit code: $($rc.ExitCode). Log: $robolog"
+    } else {
+        Write-Log "Thu muc profile da ton tai: $userProfilePath"
     }
+
+    # 3) Đăng ký ProfileList theo SID (để Windows nhận profile này là của user)
+    $plKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid"
+    if (-not (Test-Path $plKey)) {
+        Write-Log "Dang dang ky profile vao ProfileList cho SID: $sid"
+        New-Item -Path $plKey -Force | Out-Null
+    }
+    New-ItemProperty -Path $plKey -Name "ProfileImagePath" -Value $userProfilePath -PropertyType ExpandString -Force | Out-Null
+    New-ItemProperty -Path $plKey -Name "Flags" -Value 0 -PropertyType DWord -Force | Out-Null
+    New-ItemProperty -Path $plKey -Name "State" -Value 0 -PropertyType DWord -Force | Out-Null
+
+    # 4) Cấp quyền Full cho user trên thư mục profile
+    Write-Log "Dang cap quyen Full cho user tren $userProfilePath"
+    $ic = Start-Process -FilePath "icacls.exe" -ArgumentList @("$userProfilePath", "/grant", "$newUser:(OI)(CI)F") -PassThru -Wait
+    Write-Log "icacls exit code: $($ic.ExitCode)"
+
+    # 5) Hoàn tất – làm sạch form & refresh danh sách
+    LoadUsers $newUser
+    $textUserName.Text = ""
+    $textFullName.Text = ""
+    Write-Log "Da tao user '$newUser' + profile thanh cong (khong can login)."
+
+} catch {
+    Write-Log "Loi khi tao user/profile: $($_.Exception.Message)"
+    [System.Windows.Forms.MessageBox]::Show(
+        "Loi khi tao user/profile: $($_.Exception.Message)",
+        "Loi",
+        [System.Windows.Forms.MessageBoxButtons]::OK,
+        [System.Windows.Forms.MessageBoxIcon]::Error
+    ) | Out-Null
+}
+
 })
 
 #=== Sự kiện nút Run Deny Zalo ===
