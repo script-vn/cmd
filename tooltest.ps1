@@ -285,6 +285,8 @@ function LoadUsers {
 
 #=== Sự kiện nút Create user ===
 $buttonCreateUser.Add_Click({
+
+
 try {
     $newUser  = $textUserName.Text.Trim()
     $fullName = $textFullName.Text.Trim()
@@ -331,7 +333,7 @@ try {
         Write-Log "Dang tao thu muc profile: $userProfilePath tu $defaultProfile ..."
         $null = New-Item -ItemType Directory -Path $userProfilePath -Force
 
-        # Dùng robocopy để copy đầy đủ cấu trúc + NTUSER.DAT
+        # Robocopy copy đầy đủ cấu trúc + NTUSER.DAT
         $robolog = Join-Path $env:TEMP "robocopy_$($newUser)_profile.log"
         $rc = Start-Process -FilePath "robocopy.exe" `
                             -ArgumentList @("$defaultProfile", "$userProfilePath", "*", "/E", "/COPYALL", "/R:1", "/W:1", "/NFL", "/NDL", "/NP", "/LOG:$robolog") `
@@ -341,7 +343,7 @@ try {
         Write-Log "Thu muc profile da ton tai: $userProfilePath"
     }
 
-    # 3) Đăng ký ProfileList theo SID (để Windows nhận profile này là của user)
+    # 3) Đăng ký ProfileList theo SID
     $plKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid"
     if (-not (Test-Path $plKey)) {
         Write-Log "Dang dang ky profile vao ProfileList cho SID: $sid"
@@ -351,9 +353,11 @@ try {
     New-ItemProperty -Path $plKey -Name "Flags" -Value 0 -PropertyType DWord -Force | Out-Null
     New-ItemProperty -Path $plKey -Name "State" -Value 0 -PropertyType DWord -Force | Out-Null
 
-    # 4) Cấp quyền Full cho user trên thư mục profile
+    # 4) Cấp quyền Full cho user trên thư mục profile (FIX lỗi $newUser:)
     Write-Log "Dang cap quyen Full cho user tren $userProfilePath"
-    $ic = Start-Process -FilePath "icacls.exe" -ArgumentList @("$userProfilePath", "/grant", "$newUser:(OI)(CI)F") -PassThru -Wait
+    $ace  = "${newUser}:(OI)(CI)F"   # dùng ${newUser} để tránh lỗi biến + dấu ':'
+    $args = @("$userProfilePath", "/grant", $ace)
+    $ic   = Start-Process -FilePath "icacls.exe" -ArgumentList $args -PassThru -Wait
     Write-Log "icacls exit code: $($ic.ExitCode)"
 
     # 5) Hoàn tất – làm sạch form & refresh danh sách
@@ -371,6 +375,7 @@ try {
         [System.Windows.Forms.MessageBoxIcon]::Error
     ) | Out-Null
 }
+
 
 })
 
