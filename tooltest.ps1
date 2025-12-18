@@ -99,21 +99,21 @@ $noteBox.Text = "====== SETUP-POS-NSO =====`r`n***Admin:`r`n+ Pass Admin + User(
 $buttonResources = New-Object System.Windows.Forms.Button
 $buttonResources.Text = "Resources"
 $buttonResources.Location = New-Object System.Drawing.Point(20, 280)
-$buttonResources.Size = New-Object System.Drawing.Size(120, 30)
+$buttonResources.Size = New-Object System.Drawing.Size(146, 30)
 $form.Controls.Add($buttonResources)
 
 # Nút Set IP LAN và DNS
 $buttonSetIP = New-Object System.Windows.Forms.Button
 $buttonSetIP.Text = "Set IP LAN & DNS"
-$buttonSetIP.Location = New-Object System.Drawing.Point(150,280)
-$buttonSetIP.Size = New-Object System.Drawing.Size(180,30)
+$buttonSetIP.Location = New-Object System.Drawing.Point(186,280)
+$buttonSetIP.Size = New-Object System.Drawing.Size(146,30)
 $form.Controls.Add($buttonSetIP)
 
 # Nút Driver Printer
 $buttonPrinterDriver = New-Object System.Windows.Forms.Button
 $buttonPrinterDriver.Text = "Driver Printer"
-$buttonPrinterDriver.Location = New-Object System.Drawing.Point(350,280)
-$buttonPrinterDriver.Size = New-Object System.Drawing.Size(140,30)
+$buttonPrinterDriver.Location = New-Object System.Drawing.Point(352,280)
+$buttonPrinterDriver.Size = New-Object System.Drawing.Size(146,30)
 $form.Controls.Add($buttonPrinterDriver)
 
 
@@ -121,23 +121,23 @@ $form.Controls.Add($buttonPrinterDriver)
 $buttonSetPerm = New-Object System.Windows.Forms.Button
 $buttonSetPerm.Text = "Active Services Dcorp"
 $buttonSetPerm.Location = New-Object System.Drawing.Point(20, 320)   # bạn có thể chỉnh vị trí tùy ý
-$buttonSetPerm.Size = New-Object System.Drawing.Size(180, 30)
+$buttonSetPerm.Size = New-Object System.Drawing.Size(146, 30)
 $form.Controls.Add($buttonSetPerm)
 
 
 # Nút Open Printers
 $buttonOpenPrinters = New-Object System.Windows.Forms.Button
 $buttonOpenPrinters.Text = "Open Printers"
-$buttonOpenPrinters.Location = New-Object System.Drawing.Point(220, 320)
-$buttonOpenPrinters.Size = New-Object System.Drawing.Size(140, 30)
+$buttonOpenPrinters.Location = New-Object System.Drawing.Point(186, 320)
+$buttonOpenPrinters.Size = New-Object System.Drawing.Size(146, 30)
 $form.Controls.Add($buttonOpenPrinters)
 
 
 # Nút Change UAC Settings
 $buttonUAC = New-Object System.Windows.Forms.Button
 $buttonUAC.Text = "Change UAC Settings"
-$buttonUAC.Location = New-Object System.Drawing.Point(380, 320)  # đổi vị trí nếu cần
-$buttonUAC.Size = New-Object System.Drawing.Size(140, 30)
+$buttonUAC.Location = New-Object System.Drawing.Point(352, 320)  # đổi vị trí nếu cần
+$buttonUAC.Size = New-Object System.Drawing.Size(146, 30)
 $form.Controls.Add($buttonUAC)
 
 
