@@ -561,18 +561,105 @@ $buttonSFC.Add_Click({
 # Handler: tải driver Brother về ổ D và (tuỳ chọn) chạy installer
 $buttonBrother.Add_Click({
     try {
-        Write-Log "Dang tai driver Brother tu link online..."
-        $url = "https://support.brother.com/g/b/downloadhowto.aspx?c=vn&lang=en&prod=hlb2100d_as&os=10013&dlid=dlf106319_000&flang=274&type3=11"
-        $dest = "D:\\Brother_Printer_Driver.exe"
+        # Link tải (trang hướng dẫn/tải của Brother - có thể redirect)
+        $url      = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/IQDaZilunXpwTp2BNRbY6GfRAYE1e3fNHrM74a_YXaaUO58?download=1"
+
+        # Thư mục & tên file đích
+        $destDir  = "D:\"
+        $destFile = Join-Path $destDir "Brother_Printer_Driver.exe"
+        $minSize  = 1024 * 100  # 100 KB - ngưỡng nhận diện file hợp lệ (tránh HTML)
+
+        if (-not (Test-Path $destDir)) {
+            New-Item -Path $destDir -ItemType Directory -Force | Out-Null
+        }
+
+        # Hàm phụ: cài đặt nếu file hợp lệ (hỗ trợ .exe/.msi; .zip sẽ giải nén)
+        function Install-IfValid($path, $threshold) {
+            if ((Test-Path $path) -and ((Get-Item $path).Length -ge $threshold)) {
+                try { Unblock-File -Path $path } catch { }
+                $ext = [System.IO.Path]::GetExtension($path).ToLower()
+                if ($ext -eq ".zip") {
+                    Write-Log "File tai ve la ZIP - dang giai nen..."
+                    $extractDir = Join-Path (Split-Path $path -Parent) "BrotherDriver_Extract"
+                    try { New-Item -Path $extractDir -ItemType Directory -Force | Out-Null } catch { }
+                    try {
+                        Expand-Archive -Path $path -DestinationPath $extractDir -Force
+                        Write-Log "Da giai nen vao: $extractDir"
+                        # tìm file setup .exe/.msi
+                        $setup = Get-ChildItem -Path $extractDir -Recurse -Include *.exe,*.msi | Select-Object -First 1
+                        if ($setup) {
+                            Write-Log ("Dang chay cai dat: {0}" -f $setup.FullName)
+                            if ($setup.Extension -ieq ".msi") {
+                                Start-Process "msiexec.exe" -ArgumentList "/i `"$($setup.FullName)`" /qn" -Verb RunAs
+                            } else {
+                                Start-Process $setup.FullName -Verb RunAs
+                            }
+                            return $true
+                        } else {
+                            Write-Log "Khong tim thay file cai dat (.exe/.msi) trong goi ZIP."
+                            return $false
+                        }
+                    } catch {
+                        Write-Log "Loi khi giai nen ZIP: $($_.Exception.Message)"
+                        return $false
+                    }
+                } else {
+                    Write-Log ("Dang chay cai dat: {0}" -f $path)
+                    if ($ext -eq ".msi") {
+                        Start-Process "msiexec.exe" -ArgumentList "/i `"$path`" /qn" -Verb RunAs
+                    } else {
+                        Start-Process $path -Verb RunAs  # .exe
+                    }
+                    return $true
+                }
+            } else {
+                Write-Log "File khong hop le hoac khong ton tai."
+                return $false
+            }
+        }
+
+        # 1) Nếu đã có file hợp lệ -> cài luôn, bỏ qua tải
+        if (Install-IfValid -path $destFile -threshold $minSize) {
+            return
+        }
+
+        # 2) Chưa có/không hợp lệ -> tiến hành tải
+        Write-Log "File chua co/khong hop le. Dang tai Brother driver tu link online..."
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing -ErrorAction Stop
-        Write-Log "Da tai driver ve: $dest"
-        # (Tuỳ chọn) chạy installer:
-        # Start-Process $dest -Verb RunAs
+
+        try {
+            Invoke-WebRequest -Uri $url -OutFile $destFile -UseBasicParsing -ErrorAction Stop
+            Write-Log ("Da tai driver ve: {0}" -f $destFile)
+
+            # 3) Tải xong -> xác minh & cài
+            if (-not (Install-IfValid -path $destFile -threshold $minSize)) {
+                Write-Log "File tai ve khong hop le (co the la HTML hoac file qua nho)."
+            }
+
+        } catch {
+            # 4) Tải lỗi (thường do cần đăng nhập/redirect) -> mở trình duyệt
+            Write-Log "Khong tai duoc truc tiep (co the can dang nhap/redirect). Dang mo trinh duyet..."
+            try {
+                $chromePaths = @(
+                    "$Env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+                    "$Env:ProgramFiles(x86)\Google\Chrome\Application\chrome.exe"
+                )
+                $chromeExe = $chromePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+                if (-not $chromeExe) { $chromeExe = "chrome.exe" }
+
+                Start-Process $chromeExe $url
+                Write-Log "Da mo Chrome toi trang tai Brother. Vui long dang nhap/tai thu cong."
+            } catch {
+                Write-Log ("Loi khi mo Chrome: {0}. Thu mo bang trinh duyet mac dinh..." -f $_.Exception.Message)
+                Start-Process $url
+            }
+        }
+
     } catch {
-        Write-Log "Loi khi tai driver: $($_.Exception.Message)"
+        Write-Log ("Loi khi xu ly Brother driver: {0}" -f $_.Exception.Message)
     }
 })
+
 
 
 # Handler: tải file USBZy303 từ link SharePoint về D:\ và (tuỳ chọn) chạy cài đặt
@@ -645,17 +732,48 @@ $buttonUSB80C.Add_Click({
 # Handler: tải file ZY303 từ link SharePoint về D:\ và (tuỳ chọn) chạy cài đặt
 $buttonZY303.Add_Click({
     try {
-        Write-Log "Dang tai ZY303 tu link online..."
-        $url = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/IQASdgPSrQPoRbV7YqU8fz55AVWSMES8f86SVr_LjZPn2r4?download=1"
-        $destDir = "D:\"
+        $url      = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/IQASdgPSrQPoRbV7YqU8fz55AVWSMES8f86SVr_LjZPn2r4?download=1"
+        $destDir  = "D:\"
         $destFile = Join-Path $destDir "ZY303_Setup.exe"
-        if (-not (Test-Path $destDir)) { New-Item -Path $destDir -ItemType Directory -Force | Out-Null }
+        $minSize  = 1024 * 100  # 100 KB - ngưỡng để coi file hợp lệ (tránh HTML)
+
+        if (-not (Test-Path $destDir)) {
+            New-Item -Path $destDir -ItemType Directory -Force | Out-Null
+        }
+
+        # Hàm phụ: cài đặt nếu file hợp lệ
+        function Install-IfValid($path, $threshold) {
+            if ((Test-Path $path) -and ((Get-Item $path).Length -ge $threshold)) {
+                try { Unblock-File -Path $path } catch { }
+                Write-Log ("Dang chay cai dat: {0}" -f $path)
+                Start-Process $path -Verb RunAs  # UAC prompt yêu cầu xác nhận
+                return $true
+            } else {
+                Write-Log "File khong hop le hoac khong ton tai."
+                return $false
+            }
+        }
+
+        # 1) Nếu đã có file hợp lệ -> cài luôn, bỏ qua tải
+        if (Install-IfValid -path $destFile -threshold $minSize) {
+            return
+        }
+
+        # 2) Chưa có/không hợp lệ -> tiến hành tải
+        Write-Log "File chua co/khong hop le. Dang tai ZY303 tu link online..."
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
         try {
             Invoke-WebRequest -Uri $url -OutFile $destFile -UseBasicParsing -ErrorAction Stop
-            Write-Log "Da tai ZY303 ve: $destFile"
-            # Start-Process $destFile -Verb RunAs   # (bỏ comment nếu muốn auto install)
+            Write-Log ("Da tai ZY303 ve: {0}" -f $destFile)
+
+            # 3) Tải xong -> xác minh & cài
+            if (-not (Install-IfValid -path $destFile -threshold $minSize)) {
+                Write-Log "File tai ve khong hop le (co the la HTML hoac file qua nho)."
+            }
+
         } catch {
+            # 4) Tải lỗi (thường do cần đăng nhập SharePoint) -> mở trình duyệt
             Write-Log "Khong tai duoc truc tiep (co the can dang nhap SharePoint). Dang mo trinh duyet..."
             try {
                 $chromePaths = @(
@@ -665,16 +783,18 @@ $buttonZY303.Add_Click({
                 $chromeExe = $chromePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
                 if (-not $chromeExe) { $chromeExe = "chrome.exe" }
                 Start-Process $chromeExe $url
-                Write-Log "Da mo Chrome toi trang tai ZY303."
+                Write-Log "Da mo Chrome toi trang tai ZY303. Vui long dang nhap va tai thu cong."
             } catch {
-                Write-Log "Loi khi mo Chrome: $($_.Exception.Message). Thu mo bang trinh duyet mac dinh..."
+                Write-Log ("Loi khi mo Chrome: {0}. Thu mo bang trinh duyet mac dinh..." -f $_.Exception.Message)
                 Start-Process $url
             }
         }
+
     } catch {
-        Write-Log "Loi khi xu ly ZY303: $($_.Exception.Message)"
+        Write-Log ("Loi khi xu ly ZY303: {0}" -f $_.Exception.Message)
     }
 })
+
 
 
 #=== Sự kiện Form Shown: nạp user & kiểm tra dịch vụ ===
