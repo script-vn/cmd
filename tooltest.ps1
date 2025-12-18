@@ -1,5 +1,4 @@
-
-# ================== WinForms GUI: cấu trúc như bản cũ ==================
+# ================== WinForms GUI:==================
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
@@ -12,62 +11,62 @@ function Test-IsAdmin {
     return $principal.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
 }
 
-#=== Khởi tạo Form & Controls (giữ layout như bản cũ) ===
+#=== Khởi tạo Form & Controls ===
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Tool Add User & Deny Zalo"
-$form.Size = New-Object System.Drawing.Size(520,380)
+$form.Text = "Tool Support POS Order SASIN - Dev by NamIT"
+$form.Size = New-Object System.Drawing.Size(520,400)
 $form.StartPosition = "CenterScreen"
 
 # Label tạo user
 $labelNewUser = New-Object System.Windows.Forms.Label
 $labelNewUser.Text = "Add new User:"
-$labelNewUser.Location = New-Object System.Drawing.Point(20,20)
+$labelNewUser.Location = New-Object System.Drawing.Point(20,10)
 $labelNewUser.Size = New-Object System.Drawing.Size(100,20)
 $form.Controls.Add($labelNewUser)
 
 # Label User name
 $labelUserName = New-Object System.Windows.Forms.Label
 $labelUserName.Text = "User name:"
-$labelUserName.Location = New-Object System.Drawing.Point(120,20)
+$labelUserName.Location = New-Object System.Drawing.Point(120,10)
 $labelUserName.Size = New-Object System.Drawing.Size(100,20)
 $form.Controls.Add($labelUserName)
 
 # TextBox username
 $textUserName = New-Object System.Windows.Forms.TextBox
-$textUserName.Location = New-Object System.Drawing.Point(120,40)
+$textUserName.Location = New-Object System.Drawing.Point(120,30)
 $textUserName.Size = New-Object System.Drawing.Size(100,20)
 $form.Controls.Add($textUserName)
 
 # Label Full name
 $labelFullName = New-Object System.Windows.Forms.Label
 $labelFullName.Text = "Full name:"
-$labelFullName.Location = New-Object System.Drawing.Point(230,20)
+$labelFullName.Location = New-Object System.Drawing.Point(230,10)
 $labelFullName.Size = New-Object System.Drawing.Size(100,20)
 $form.Controls.Add($labelFullName)
 
 # TextBox full name
 $textFullName = New-Object System.Windows.Forms.TextBox
-$textFullName.Location = New-Object System.Drawing.Point(230,40)
+$textFullName.Location = New-Object System.Drawing.Point(230,30)
 $textFullName.Size = New-Object System.Drawing.Size(150,20)
 $form.Controls.Add($textFullName)
 
 # Nút tạo user
 $buttonCreateUser = New-Object System.Windows.Forms.Button
 $buttonCreateUser.Text = "Create user"
-$buttonCreateUser.Location = New-Object System.Drawing.Point(390,40)
-$buttonCreateUser.Size = New-Object System.Drawing.Size(80,25)
+$buttonCreateUser.Location = New-Object System.Drawing.Point(390,29)
+$buttonCreateUser.Size = New-Object System.Drawing.Size(80,23)
 $form.Controls.Add($buttonCreateUser)
 
 # Label chọn user
 $labelUser = New-Object System.Windows.Forms.Label
 $labelUser.Text = "Select user:"
-$labelUser.Location = New-Object System.Drawing.Point(20,80)
+$labelUser.Location = New-Object System.Drawing.Point(20,70)
 $labelUser.Size = New-Object System.Drawing.Size(100,20)
 $form.Controls.Add($labelUser)
 
 # ComboBox user
 $comboBox = New-Object System.Windows.Forms.ComboBox
-$comboBox.Location = New-Object System.Drawing.Point(120,80)
+$comboBox.Location = New-Object System.Drawing.Point(120,70)
 $comboBox.Size = New-Object System.Drawing.Size(200,20)
 $comboBox.DropDownStyle = "DropDownList"
 $form.Controls.Add($comboBox)
@@ -75,52 +74,54 @@ $form.Controls.Add($comboBox)
 # Nút chặn Zalo
 $buttonExecute = New-Object System.Windows.Forms.Button
 $buttonExecute.Text = "Run Deny Zalo"
-$buttonExecute.Location = New-Object System.Drawing.Point(150,110)
-$buttonExecute.Size = New-Object System.Drawing.Size(180,30)
+$buttonExecute.Location = New-Object System.Drawing.Point(320,69)
+$buttonExecute.Size = New-Object System.Drawing.Size(150,23)
 $form.Controls.Add($buttonExecute)
 
 # TextBox ghi log
 $logBox = New-Object System.Windows.Forms.TextBox
-$logBox.Location = New-Object System.Drawing.Point(20,150)
-$logBox.Size = New-Object System.Drawing.Size(470,160)
+$logBox.Location = New-Object System.Drawing.Point(15,110)
+$logBox.Size = New-Object System.Drawing.Size(300,160)
 $logBox.Multiline = $true
 $logBox.ScrollBars = "Vertical"
 $logBox.ReadOnly = $true
 $form.Controls.Add($logBox)
-$logBox.Text = "*Admin + User(ZaloPC)
-*Driver Printer - Update windows
-*Set IP LAN
-*Never Sleep
-*Change User account Admin
-*Active Servces-Dcorp
-*Set Audio note run system, ultraview(Pass + Auto run)"
+$logBox.Text = "đã mở log... fdsfsdfs. fdsfdsf .sdfdsfsdf .sdfsdfdf fdsfdsf fdsfdsf"
+
+$noteBox = New-Object System.Windows.Forms.TextBox
+$noteBox.Location = New-Object System.Drawing.Point(320,110)
+$noteBox.Size = New-Object System.Drawing.Size(170,160)
+$noteBox.Multiline = $true
+$noteBox.ReadOnly = $true
+$form.Controls.Add($noteBox)
+$noteBox.Text = "====== SETUP-POS-NSO =====`r`n***Admin:`r`n+ Pass Admin + User(ZaloPC)`r`n+ Driver Printer - Update windows`r`n+ Change User account Admin`r`n*** USER`r`n+ Never Sleep`r`n+ Set IP LAN`r`n+ Active Services-Dcorp`r`n+ Set Audio note run system, ultraview(Pass + Auto run)"
 
 # Nút Resources
 $buttonResources = New-Object System.Windows.Forms.Button
 $buttonResources.Text = "Resources"
-$buttonResources.Location = New-Object System.Drawing.Point(20, 320)
+$buttonResources.Location = New-Object System.Drawing.Point(20, 280)
 $buttonResources.Size = New-Object System.Drawing.Size(120, 30)
 $form.Controls.Add($buttonResources)
 
 # Nút Set IP LAN và DNS
 $buttonSetIP = New-Object System.Windows.Forms.Button
 $buttonSetIP.Text = "Set IP LAN & DNS"
-$buttonSetIP.Location = New-Object System.Drawing.Point(150,320)
+$buttonSetIP.Location = New-Object System.Drawing.Point(150,280)
 $buttonSetIP.Size = New-Object System.Drawing.Size(180,30)
 $form.Controls.Add($buttonSetIP)
 
 # Nút Driver Printer
 $buttonPrinterDriver = New-Object System.Windows.Forms.Button
 $buttonPrinterDriver.Text = "Driver Printer"
-$buttonPrinterDriver.Location = New-Object System.Drawing.Point(350,320)
+$buttonPrinterDriver.Location = New-Object System.Drawing.Point(350,280)
 $buttonPrinterDriver.Size = New-Object System.Drawing.Size(140,30)
 $form.Controls.Add($buttonPrinterDriver)
 
 
-# Nút Set Permissions Dcorp
+# Nút Active Services Dcorp
 $buttonSetPerm = New-Object System.Windows.Forms.Button
-$buttonSetPerm.Text = "Set Permissions Dcorp"
-$buttonSetPerm.Location = New-Object System.Drawing.Point(20, 360)   # bạn có thể chỉnh vị trí tùy ý
+$buttonSetPerm.Text = "Active Services Dcorp"
+$buttonSetPerm.Location = New-Object System.Drawing.Point(20, 320)   # bạn có thể chỉnh vị trí tùy ý
 $buttonSetPerm.Size = New-Object System.Drawing.Size(180, 30)
 $form.Controls.Add($buttonSetPerm)
 
@@ -128,7 +129,7 @@ $form.Controls.Add($buttonSetPerm)
 # Nút Open Printers
 $buttonOpenPrinters = New-Object System.Windows.Forms.Button
 $buttonOpenPrinters.Text = "Open Printers"
-$buttonOpenPrinters.Location = New-Object System.Drawing.Point(220, 360)
+$buttonOpenPrinters.Location = New-Object System.Drawing.Point(220, 320)
 $buttonOpenPrinters.Size = New-Object System.Drawing.Size(140, 30)
 $form.Controls.Add($buttonOpenPrinters)
 
