@@ -491,7 +491,7 @@ function Set-DenyZalo {
     $hiveName = "HKU\TempHive"
 
     try {
-        Write-Log "Dang load hive NTUSER.DAT..."
+#     Write-Log "Dang load hive NTUSER.DAT..."
         & reg.exe load $hiveName $ntUserDatPath | Out-Null
 
         & reg.exe add "$hiveName\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v DisallowRun /t REG_DWORD /d 1 /f | Out-Null
@@ -501,7 +501,7 @@ function Set-DenyZalo {
         Write-Log "Da ghi registry chan Zalo cho user '$UserName'."
     }
     finally {
-        Write-Log "Dang unload hive..."
+#      Write-Log "Dang unload hive..."
         & reg.exe unload $hiveName | Out-Null
     }
 }
