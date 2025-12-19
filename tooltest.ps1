@@ -542,67 +542,99 @@ function LoadUsers {
     }
 }
 
+
 #=== Sự kiện nút Create user ===
 $buttonCreateUser.Add_Click({
 
-try {
-        $newUser = $textUserName.Text.Trim()
+    # Bỏ try ngoài hoặc thêm catch; ở đây mình bỏ để đơn giản.
+    $newUser  = $textUserName.Text.Trim()
     $fullName = $textFullName.Text.Trim()
+
     if (-not $newUser) {
-        [System.Windows.Forms.MessageBox]::Show("Vui long nhap User name.","Thong bao",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        [System.Windows.Forms.MessageBox]::Show(
+            "Vui long nhap User name.",
+            "Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
         return
     }
+
     if (-not (Test-IsAdmin)) {
-        [System.Windows.Forms.MessageBox]::Show("Can Admin rights de tao user.","Thong bao",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        [System.Windows.Forms.MessageBox]::Show(
+            "Can Admin rights de tao user.",
+            "Thong bao",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        ) | Out-Null
         return
     }
+
     try {
-        Write-Log "Dang tao user '$newUser'..."
+        Write-Log -Message "Dang tao user '$newUser'..."
         $password = ConvertTo-SecureString "123" -AsPlainText -Force
+
         New-LocalUser -Name $newUser -FullName $fullName -Password $password -ErrorAction Stop
         Set-LocalUser -Name $newUser -PasswordNeverExpires $true
+
+        # Sửa &amp; -> &
         & net.exe user $newUser /passwordchg:no | Out-Null
+
         Add-LocalGroupMember -Group "Users" -Member $newUser -ErrorAction SilentlyContinue
+
         LoadUsers $newUser
         $textUserName.Text = ""
         $textFullName.Text = ""
-        Write-Log "Da tao user '$newUser' thanh cong."
-    } catch {
-        Write-Log "Loi khi tao user: $($_.Exception.Message)"
-        [System.Windows.Forms.MessageBox]::Show("Loi khi tao user: $($_.Exception.Message)","Loi",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+        Write-Log -Message "Da tao user '$newUser' thanh cong."
     }
-# region Chuẩn bị log & kiểm tra quyền
-$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
-$LogFile = Join-Path $env:TEMP "FixUserProfile_$timestamp.log"
-$ErrorActionPreference = "Stop"
+    catch {
+        Write-Log -Message "Loi khi tao user: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show(
+            "Loi khi tao user: $($_.Exception.Message)",
+            "Loi",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        ) | Out-Null
+    }
 
-Write-Log -Message "=== Bắt đầu FixUserProfile ==="
-if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
-    Write-Log -Message "Script cần chạy với quyền Administrator. Thoát..." -Level "ERROR"
-    throw "Vui lòng mở PowerShell 'Run as Administrator'."
-}
-# Xác nhận phiên bản Windows 10
-$os = (Get-CimInstance Win32_OperatingSystem)
-Write-Log -Message ("Hệ điều hành: {0} {1}" -f $os.Caption, $os.Version)
-$backupDir = Join-Path $env:TEMP "FixUserProfile_Backup_$timestamp"
-New-Item -Path $backupDir -ItemType Directory -Force | Out-Null
-Backup-RegistryKey -RegPath "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -FileName "Winlogon.reg"
-Backup-RegistryKey -RegPath "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList" -FileName "ProfileList.reg"
-Ensure-UserProfileService
-Fix-WinlogonKeys
-Check-SystemDriveFreeSpace
-Reset-UsersAcl -Path "C:\Users"
-Reset-UsersAcl -Path "C:\Users\Default"
-Test-DefaultProfileHealth
-Fix-ProfileListBak
-Check-DenyLogonLocally
-Run-SystemIntegrityCheck
-# endregion
+    #region Chuẩn bị log & kiểm tra quyền
+    $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+    $LogFile   = Join-Path $env:TEMP "FixUserProfile_$timestamp.log"
+    $ErrorActionPreference = "Stop"
 
-Write-Log -Message ("=== Hoàn tất. Log lưu tại: {0} ===" -f $LogFile)
-Write-Host "`n-> Vui lòng khởi động lại máy và thử đăng nhập lại tài khoản mới."
-}
+    Write-Log -Message "=== Bắt đầu FixUserProfile ==="
+
+    if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
+        ).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
+        Write-Log -Message "Script cần chạy với quyền Administrator. Thoát..." -Level "ERROR"
+        throw "Vui lòng mở PowerShell 'Run as Administrator'."
+    }
+
+    # Xác nhận phiên bản Windows 10
+    $os = Get-CimInstance Win32_OperatingSystem
+    Write-Log -Message ("Hệ điều hành: {0} {1}" -f $os.Caption, $os.Version)
+
+    $backupDir = Join-Path $env:TEMP "FixUserProfile_Backup_$timestamp"
+    New-Item -Path $backupDir -ItemType Directory -Force | Out-Null
+
+    Backup-RegistryKey -RegPath "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"   -FileName "Winlogon.reg"
+    Backup-RegistryKey -RegPath "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList" -FileName "ProfileList.reg"
+
+    Ensure-UserProfileService
+    Fix-WinlogonKeys
+    Check-SystemDriveFreeSpace
+    Reset-UsersAcl -Path "C:\Users"
+    Reset-UsersAcl -Path "C:\Users\Default"
+    Test-DefaultProfileHealth
+    Fix-ProfileListBak
+    Check-DenyLogonLocally
+    Run-SystemIntegrityCheck
+    #endregion
+
+    Write-Log -Message ("=== Hoàn tất. Log lưu tại: {0} ===" -f $LogFile)
+    Write-Host "`n-> Vui lòng khởi động lại máy và thử đăng nhập lại tài khoản mới."
 })
+
 
 #=== Sự kiện nút Run Deny Zalo ===
 $buttonExecute.Add_Click({
