@@ -608,8 +608,8 @@ $buttonCreateUser.Add_Click({
     Run-SystemIntegrityCheck
     #endregion
 
-    Write-Log -Message ("=== Hoan tat. Log luu tai: {0} ===" -f $LogFile)
-    Write-Host "`n-> Vui long khoi dong lai may va thu dang nhap tai khoan moi."
+ #   Write-Log -Message ("=== Hoan tat. Log luu tai: {0} ===" -f $LogFile)
+ #   Write-Host "`n-> Vui long khoi dong lai may va thu dang nhap tai khoan moi."
 })
 
 
