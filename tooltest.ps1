@@ -222,9 +222,9 @@ Function Backup-RegistryKey {
         $full = Join-Path $backupDir $FileName
         # Dùng reg.exe để export
         & reg.exe export $RegPath $full /y | Out-Null
-        Write-Log -Message ("Done backup: {0} -> {1}" -f $RegPath, $full)
+#      Write-Log -Message ("Done backup: {0} -> {1}" -f $RegPath, $full)
     } catch {
-        Write-Log -Message ("Backup Fail {0}: {1}" -f $RegPath, $_) -Level "WARN"
+       Write-Log -Message ("Backup Fail {0}: {1}" -f $RegPath, $_) -Level "WARN"
     }
 }
 # endregion
@@ -241,9 +241,9 @@ Function Ensure-UserProfileService {
             Start-Service -Name "ProfSvc"
         }
         $svc = Get-Service -Name "ProfSvc"
-        Write-Log -Message ("ProfSvc: {0}, StartupType: {1}" -f $svc.Status, $svc.StartType)
+#      Write-Log -Message ("ProfSvc: {0}, StartupType: {1}" -f $svc.Status, $svc.StartType)
     } catch {
-        Write-Log -Message ("Notfound/Not control ProfSvc: {0}" -f $_) -Level "ERROR"
+       Write-Log -Message ("Notfound/Not control ProfSvc: {0}" -f $_) -Level "ERROR"
         throw
     }
 }
@@ -260,17 +260,17 @@ Function Fix-WinlogonKeys {
         $currShell = (Get-ItemProperty -Path $key -Name "Shell" -ErrorAction SilentlyContinue).Shell
 
         if ($currUserinit -ne $userinitDefault) {
-            Write-Log -Message ("Fix Winlogon\Userinit -> {0} (trước: '{1}')" -f $userinitDefault, $currUserinit)
+#         Write-Log -Message ("Fix Winlogon\Userinit -> {0} (trước: '{1}')" -f $userinitDefault, $currUserinit)
             Set-ItemProperty -Path $key -Name "Userinit" -Value $userinitDefault
         } else {
-            Write-Log -Message ("Winlogon\Userinit OK: {0}" -f $currUserinit)
+#          Write-Log -Message ("Winlogon\Userinit OK: {0}" -f $currUserinit)
         }
 
         if ($currShell -ne $shellDefault) {
-            Write-Log -Message ("Fix Winlogon\Shell -> {0} (trước: '{1}')" -f $shellDefault, $currShell)
+#         Write-Log -Message ("Fix Winlogon\Shell -> {0} (trước: '{1}')" -f $shellDefault, $currShell)
             Set-ItemProperty -Path $key -Name "Shell" -Value $shellDefault
         } else {
-            Write-Log -Message ("Winlogon\Shell OK: {0}" -f $currShell)
+#          Write-Log -Message ("Winlogon\Shell OK: {0}" -f $currShell)
         }
     } catch {
         Write-Log -Message ("Error set Winlogon: {0}" -f $_) -Level "ERROR"
@@ -283,9 +283,9 @@ Function Check-SystemDriveFreeSpace {
     $sysDriveName = ($env:SystemDrive).TrimEnd(':')
     $sysDrive = Get-PSDrive -Name $sysDriveName
     $freeGB = [math]::Round($sysDrive.Free/1GB,2)
-    Write-Log -Message ("Free Space {0}: {1} GB" -f $sysDrive.Name, $freeGB)
+#   Write-Log -Message ("Free Space {0}: {1} GB" -f $sysDrive.Name, $freeGB)
     if ($freeGB -lt 2) {
-        Write-Log -Message "Warring < 2GB do Profile not create." -Level "WARN"
+#       Write-Log -Message "Warring < 2GB do Profile not create." -Level "WARN"
     }
 }
 # endregion
@@ -300,7 +300,7 @@ Function Reset-UsersAcl {
         Write-Log -Message ("Cap Quyen Co ban cho: {0}" -f $Path)
         & icacls $Path /grant "SYSTEM:(F)" "BUILTIN\Administrators:(F)" "BUILTIN\Users:(RX)" /T /C | Out-Null
 
-        Write-Log -Message ("Set ACL Default xong cho: {0}" -f $Path)
+#      Write-Log -Message ("Set ACL Default xong cho: {0}" -f $Path)
     } catch {
         Write-Log -Message ("Error set ACL cho {0}: {1}" -f $Path, $_) -Level "ERROR"
     }
@@ -310,19 +310,19 @@ Function Reset-UsersAcl {
 Function Test-DefaultProfileHealth {
     $def = "C:\Users\Default"
     if (-not (Test-Path $def)) {
-        Write-Log -Message ("Thieu thu muc Default Profile: {0}" -f $def) -Level "ERROR"
-        Write-Log -Message "Huong da: Khoi phuc Default tu nguon cai dat/may kha cung version. Khong tu sao chep tu systemprofile." -Level "WARN"
+#       Write-Log -Message ("Thieu thu muc Default Profile: {0}" -f $def) -Level "ERROR"
+#       Write-Log -Message "Huong da: Khoi phuc Default tu nguon cai dat/may kha cung version. Khong tu sao chep tu systemprofile." -Level "WARN"
         return
     }
     $ntuser = Join-Path $def "NTUSER.DAT"
     if (-not (Test-Path $ntuser)) {
-        Write-Log -Message "Thieu NTUSER.DAT trong Default Profile -> nguyen nhan pho bien gay 'Signing out'." -Level "ERROR"
-        Write-Log -Message "Huong dan: Sao chep NTUSER.DAT hop le tu may Windows 10 cung build hoac media cai dat." -Level "WARN"
+#      Write-Log -Message "Thieu NTUSER.DAT trong Default Profile -> nguyen nhan pho bien gay 'Signing out'." -Level "ERROR"
+#       Write-Log -Message "Huong dan: Sao chep NTUSER.DAT hop le tu may Windows 10 cung build hoac media cai dat." -Level "WARN"
     } else {
         $sizeMB = [math]::Round((Get-Item $ntuser).Length/1MB,2)
-        Write-Log -Message ("NTUSER.DAT ton tai, kich thuoc: {0} MB" -f $sizeMB)
+#       Write-Log -Message ("NTUSER.DAT ton tai, kich thuoc: {0} MB" -f $sizeMB)
         if ($sizeMB -lt 0.2) {
-            Write-Log -Message "Canh bao: NTUSER.DAT kich thuoc bat thuong (<0.2MB) -> co the hong." -Level "WARN"
+#           Write-Log -Message "Canh bao: NTUSER.DAT kich thuoc bat thuong (<0.2MB) -> co the hong." -Level "WARN"
         }
     }
 }
@@ -340,7 +340,7 @@ Function Fix-ProfileListBak {
         if ($isBak) {
             $nonBak = Join-Path $base $plainSid
             if (Test-Path $nonBak) {
-                Write-Log -Message ("Phat hien cap SID: {0} và {1} -> tien hanh sua theo chuan" -f $sid, $plainSid)
+#            Write-Log -Message ("Phat hien cap SID: {0} và {1} -> tien hanh sua theo chuan" -f $sid, $plainSid)
                 try {
                     Set-ItemProperty -Path $k.PSPath -Name "RefCount" -Value 0 -ErrorAction SilentlyContinue
                     Set-ItemProperty -Path $k.PSPath -Name "State" -Value 0 -ErrorAction SilentlyContinue
@@ -350,16 +350,16 @@ Function Fix-ProfileListBak {
                     & reg.exe rename ("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\" + $plainSid) $tmp /f | Out-Null
                     & reg.exe rename ("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\" + $sid) $plainSid /f | Out-Null
                     Remove-Item -Path (Join-Path $base $tmp) -Recurse -Force -ErrorAction SilentlyContinue
-                    Write-Log -Message ("Da xu ly SID .bak -> {0}" -f $plainSid)
+#                  Write-Log -Message ("Da xu ly SID .bak -> {0}" -f $plainSid)
                 } catch {
-                    Write-Log -Message ("Loi doi ten SID .bak: {0}" -f $_) -Level "ERROR"
+#                   Write-Log -Message ("Loi doi ten SID .bak: {0}" -f $_) -Level "ERROR"
                 }
             } else {
                 try {
                     & reg.exe rename ("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\" + $sid) $plainSid /f | Out-Null
-                    Write-Log -Message ("Doi ten {0} -> {1} (Khong co ban nonBak)" -f $sid, $plainSid)
+#                 Write-Log -Message ("Doi ten {0} -> {1} (Khong co ban nonBak)" -f $sid, $plainSid)
                 } catch {
-                    Write-Log -Message ("Loi rename {0}: {1}" -f $sid, $_) -Level "ERROR"
+#                  Write-Log -Message ("Loi rename {0}: {1}" -f $sid, $_) -Level "ERROR"
                 }
             }
         }
@@ -375,9 +375,9 @@ Function Fix-ProfileListBak {
                     Write-Log -Message ("Profile SID {0} tro den '{1}' khong ton tai -> xoa de tranh xung dot" -f $sidPlain, $pip)
                     try {
                         Remove-Item -Path $k.PSPath -Recurse -Force
-                        Write-Log -Message ("Da xoa SID {0} mo coi" -f $sidPlain)
+#                    Write-Log -Message ("Da xoa SID {0} mo coi" -f $sidPlain)
                     } catch {
-                        Write-Log -Message ("Khong the xoa SID {0}: {1}" -f $sidPlain, $_) -Level "WARN"
+#                      Write-Log -Message ("Khong the xoa SID {0}: {1}" -f $sidPlain, $_) -Level "WARN"
                     }
                 }
             }
@@ -394,10 +394,10 @@ Function Check-DenyLogonLocally {
             $lines = Get-Content $cfg
             $deny = $lines | Where-Object { $_ -match "^SeDenyInteractiveLogonRight\s*=" }
             if ($deny) {
-                Write-Log -Message ("Phat hien cau hinh 'Deny log on locally': {0}" -f ($deny -join "; ")) -Level "WARN"
-                Write-Log -Message "Neu chua 'Users' hoac tai khoan muc tieu, can go chinh sach nay trong Local Security Policy (secpol.msc)." -Level "WARN"
+#              Write-Log -Message ("Phat hien cau hinh 'Deny log on locally': {0}" -f ($deny -join "; ")) -Level "WARN"
+#               Write-Log -Message "Neu chua 'Users' hoac tai khoan muc tieu, can go chinh sach nay trong Local Security Policy (secpol.msc)." -Level "WARN"
             } else {
-                Write-Log -Message "Khong thay cau hinh 'Deny log on locally'."
+#              Write-Log -Message "Khong thay cau hinh 'Deny log on locally'."
             }
         }
     } catch {
@@ -410,15 +410,15 @@ Function Run-SystemIntegrityCheck {
     param([switch]$RunNow)
     if ($RunNow) {
         try {
-            Write-Log -Message "Chay DISM /RestoreHealth (co the mat thoi gian)..."
+#           Write-Log -Message "Chay DISM /RestoreHealth (co the mat thoi gian)..."
             & DISM.exe /Online /Cleanup-Image /RestoreHealth | Tee-Object -FilePath (Join-Path $backupDir "DISM_RestoreHealth.log")
-            Write-Log -Message "Chay SFC /SCANNOW..."
+#          Write-Log -Message "Chay SFC /SCANNOW..."
             & sfc.exe /scannow | Tee-Object -FilePath (Join-Path $backupDir "SFC_scannow.log")
         } catch {
-            Write-Log -Message ("DISM/SFC loi: {0}" -f $_) -Level "WARN"
+           Write-Log -Message ("DISM/SFC loi: {0}" -f $_) -Level "WARN"
         }
     } else {
-        Write-Log -Message "Khuyen nghi chay DISM & SFC neu loi van con: DISM /Online /Cleanup-Image /RestoreHealth ; sfc /scannow" -Level "INFO"
+ #       Write-Log -Message "Khuyen nghi chay DISM & SFC neu loi van con: DISM /Online /Cleanup-Image /RestoreHealth ; sfc /scannow" -Level "INFO"
     }
 }
 
