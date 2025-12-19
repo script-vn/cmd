@@ -189,90 +189,261 @@ $buttonZY303.Size = New-Object System.Drawing.Size(146, 30)
 $form.Controls.Add($buttonZY303)
 
 
-function Initialize-LocalUserProfile {
+<#
+.SYNOPSIS
+  Kiểm tra & sửa lỗi khiến user mới đăng nhập xong bị "Signing out" trên Windows 10.
+
+.DESCRIPTION
+  - Đảm bảo dịch vụ User Profile Service (ProfSvc) ở trạng thái Automatic & Running.
+  - Sửa các khóa Winlogon (Shell, Userinit) về giá trị mặc định an toàn.
+  - Dọn & sửa các SID .bak trong ProfileList theo hướng dẫn chuẩn.
+  - Đặt lại quyền NTFS cơ bản cho C:\Users và C:\Users\Default (kế thừa bật).
+  - Kiểm tra dung lượng trống, trạng thái Default Profile (NTUSER.DAT).
+  - Xuất Local Security Policy để cảnh báo nếu có "Deny log on locally".
+  - Backup registry trước khi chỉnh sửa.
+  - Ghi log đầy đủ vào %TEMP%\FixUserProfile_YYYYMMDD_HHMMSS.log
+
+.NOTES
+  Chạy với quyền Administrator. Áp dụng cho Windows 10.
+#>
+
+
+
+Function Write-Log {
     param(
-        [Parameter(Mandatory=$true)][string]$UserName
+        [Parameter(Mandatory=$true)][string]$Message,
+        [ValidateSet("INFO","WARN","ERROR")][string]$Level = "INFO"
     )
-    try {
-        $sidObj = (Get-LocalUser -Name $UserName).Sid
-        if (-not $sidObj) { throw "Khong lay duoc SID cho user $UserName." }
-        $sid = $sidObj.Value
-
-        $userProfilePath = "C:\Users\$UserName"
-        $defaultProfile  = "C:\Users\Default"
-
-        # 1) Tạo thư mục profile & copy từ Default
-        if (-not (Test-Path $userProfilePath)) {
-            Write-Log "Dang tao profile thu muc: $userProfilePath tu $defaultProfile ..."
-            $null = New-Item -ItemType Directory -Path $userProfilePath -Force
-
-            $robolog = Join-Path $env:TEMP "robocopy_$($UserName)_profile.log"
-            $rc = Start-Process -FilePath "robocopy.exe" `
-                                -ArgumentList @("$defaultProfile", "$userProfilePath", "*", "/E", "/COPYALL", "/R:1", "/W:1", "/NFL", "/NDL", "/NP", "/LOG:$robolog") `
-                                -PassThru -Wait
-            Write-Log "Robocopy exit code: $($rc.ExitCode). Log: $robolog"
-        } else {
-            Write-Log "Thu muc profile da ton tai: $userProfilePath"
-        }
-
-        # 2) Đăng ký ProfileList cho SID
-        $plKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$sid"
-        if (-not (Test-Path $plKey)) {
-            Write-Log "Dang dang ky ProfileList cho SID: $sid"
-            New-Item -Path $plKey -Force | Out-Null
-        }
-        New-ItemProperty -Path $plKey -Name "ProfileImagePath" -Value $userProfilePath -PropertyType ExpandString -Force | Out-Null
-        New-ItemProperty -Path $plKey -Name "Flags" -Value 0 -PropertyType DWord -Force | Out-Null
-        New-ItemProperty -Path $plKey -Name "State" -Value 0 -PropertyType DWord -Force | Out-Null
-        New-ItemProperty -Path $plKey -Name "RefCount" -Value 0 -PropertyType DWord -Force | Out-Null
-
-        # 3) Sửa quyền & ownership thư mục profile
-        Write-Log "Dang sua ACL & owner cho $userProfilePath ..."
-        # Bật inheritance trước
-        Start-Process -FilePath "icacls.exe" -ArgumentList @("$userProfilePath", "/inheritance:e") -PassThru -Wait | Out-Null
-
-        # Grant Full Control cho user (recursive)
-        $ace = "${UserName}:(OI)(CI)F"      # chú ý dùng ${UserName} để không bị lỗi parser với dấu ':'
-        Start-Process -FilePath "icacls.exe" -ArgumentList @("$userProfilePath", "/grant", $ace, "/T", "/C") -PassThru -Wait | Out-Null
-
-        # Grant Full Control riêng cho NTUSER.DAT
-        $ntDat = Join-Path $userProfilePath "NTUSER.DAT"
-        if (Test-Path $ntDat) {
-            Start-Process -FilePath "icacls.exe" -ArgumentList @("$ntDat", "/grant", "${UserName}:(F)") -PassThru -Wait | Out-Null
-        }
-
-        # Set owner là user (recursive)
-        Start-Process -FilePath "icacls.exe" -ArgumentList @("$userProfilePath", "/setowner", $UserName, "/T", "/C") -PassThru -Wait | Out-Null
-        Write-Log "Da hoan tat sua ACL & owner cho $userProfilePath."
-
-        # 4) Đảm bảo Group Policy Client service
-        
-    try {
-    $svc = Get-Service -Name gpsvc -ErrorAction Stop
-
-    if ($svc.Status -ne 'Running') {
-        Write-Log "gpsvc khong chay. Dang thu Start-Service gpsvc..."
-        try {
-            Start-Service gpsvc -ErrorAction Stop
-            Write-Log "gpsvc da chay."
-        } catch {
-            Write-Log "Khong the start gpsvc: $($_.Exception.Message)"
-        }
-    } else {
-        Write-Log "gpsvc dang chay."
-    }
-
-    # Lưu ý: Bo qua Set-Service StartupType vi co the bi Access Denied tren Windows 10/11
-    # Write-Log "Bo qua thay doi StartupType gpsvc (duoc he thong han quyen)."
-
-} catch {
-    Write-Log "Khong kiem tra duoc gpsvc: $($_.Exception.Message)"
+    $line = "[{0}] [{1}] {2}" -f (Get-Date -Format "yyyy-MM-dd HH:mm:ss"), $Level, $Message
+    Write-Host $line
+    Add-Content -Path $LogFile -Value $line
 }
 
 
+# endregion
+
+# region Backup Registry
+
+Function Backup-RegistryKey {
+    param([string]$RegPath, [string]$FileName)
+    try {
+        $full = Join-Path $backupDir $FileName
+        # Dùng reg.exe để export
+        & reg.exe export $RegPath $full /y | Out-Null
+        Write-Log -Message ("Đã backup: {0} -> {1}" -f $RegPath, $full)
     } catch {
-        Write-Log "Loi Initialize-LocalUserProfile: $($_.Exception.Message)"
+        Write-Log -Message ("Backup thất bại {0}: {1}" -f $RegPath, $_) -Level "WARN"
+    }
+}
+
+# endregion
+
+# region Dịch vụ User Profile Service
+Function Ensure-UserProfileService {
+    try {
+        $svc = Get-Service -Name "ProfSvc" -ErrorAction Stop
+        if ($svc.StartType -ne "Automatic") {
+            Write-Log -Message "Đặt ProfSvc StartupType -> Automatic"
+            Set-Service -Name "ProfSvc" -StartupType Automatic
+        }
+        if ($svc.Status -ne "Running") {
+            Write-Log -Message "Khởi động ProfSvc"
+            Start-Service -Name "ProfSvc"
+        }
+        $svc = Get-Service -Name "ProfSvc"
+        Write-Log -Message ("ProfSvc: {0}, StartupType: {1}" -f $svc.Status, $svc.StartType)
+    } catch {
+        Write-Log -Message ("Không tìm thấy/không thể điều khiển ProfSvc: {0}" -f $_) -Level "ERROR"
         throw
+    }
+}
+
+# endregion
+
+# region Sửa khóa Winlogon (Userinit, Shell)
+Function Fix-WinlogonKeys {
+    $key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
+    try {
+        # Giá trị mặc định an toàn
+        $userinitDefault = "$env:SystemRoot\system32\userinit.exe,"
+        $shellDefault = "explorer.exe"
+
+        $currUserinit = (Get-ItemProperty -Path $key -Name "Userinit" -ErrorAction SilentlyContinue).Userinit
+        $currShell = (Get-ItemProperty -Path $key -Name "Shell" -ErrorAction SilentlyContinue).Shell
+
+        if ($currUserinit -ne $userinitDefault) {
+            Write-Log -Message ("Sửa Winlogon\Userinit -> {0} (trước: '{1}')" -f $userinitDefault, $currUserinit)
+            Set-ItemProperty -Path $key -Name "Userinit" -Value $userinitDefault
+        } else {
+            Write-Log -Message ("Winlogon\Userinit OK: {0}" -f $currUserinit)
+        }
+
+        if ($currShell -ne $shellDefault) {
+            Write-Log -Message ("Sửa Winlogon\Shell -> {0} (trước: '{1}')" -f $shellDefault, $currShell)
+            Set-ItemProperty -Path $key -Name "Shell" -Value $shellDefault
+        } else {
+            Write-Log -Message ("Winlogon\Shell OK: {0}" -f $currShell)
+        }
+    } catch {
+        Write-Log -Message ("Lỗi chỉnh Winlogon: {0}" -f $_) -Level "ERROR"
+        throw
+    }
+}
+
+# endregion
+
+# region Kiểm tra dung lượng trống ổ hệ thống
+Function Check-SystemDriveFreeSpace {
+    $sysDriveName = ($env:SystemDrive).TrimEnd(':')
+    $sysDrive = Get-PSDrive -Name $sysDriveName
+    $freeGB = [math]::Round($sysDrive.Free/1GB,2)
+    Write-Log -Message ("Dung lượng trống {0}: {1} GB" -f $sysDrive.Name, $freeGB)
+    if ($freeGB -lt 2) {
+        Write-Log -Message "Cảnh báo: Dung lượng trống < 2GB có thể khiến Profile không tạo được." -Level "WARN"
+    }
+}
+
+# endregion
+
+# region Đặt lại quyền NTFS cho C:\Users và C:\Users\Default
+Function Reset-UsersAcl {
+    param([string]$Path)
+    if (-not (Test-Path $Path)) { Write-Log -Message ("Không tồn tại: {0}" -f $Path) -Level "WARN"; return }
+    try {
+        Write-Log -Message ("Bật kế thừa ACL cho: {0}" -f $Path)
+        & icacls $Path /inheritance:e | Out-Null
+
+        Write-Log -Message ("Cấp quyền cơ bản cho: {0}" -f $Path)
+        & icacls $Path /grant "SYSTEM:(F)" "BUILTIN\Administrators:(F)" "BUILTIN\Users:(RX)" /T /C | Out-Null
+
+        Write-Log -Message ("Đặt ACL mặc định xong cho: {0}" -f $Path)
+    } catch {
+        Write-Log -Message ("Lỗi đặt ACL cho {0}: {1}" -f $Path, $_) -Level "ERROR"
+    }
+}
+
+
+# endregion
+
+# region Kiểm tra Default Profile (NTUSER.DAT)
+Function Test-DefaultProfileHealth {
+    $def = "C:\Users\Default"
+    if (-not (Test-Path $def)) {
+        Write-Log -Message ("Thiếu thư mục Default Profile: {0}" -f $def) -Level "ERROR"
+        Write-Log -Message "Hướng dẫn: Khôi phục Default từ nguồn cài đặt/máy khác cùng version. Không tự sao chép từ systemprofile." -Level "WARN"
+        return
+    }
+    $ntuser = Join-Path $def "NTUSER.DAT"
+    if (-not (Test-Path $ntuser)) {
+        Write-Log -Message "Thiếu NTUSER.DAT trong Default Profile -> nguyên nhân phổ biến gây 'Signing out'." -Level "ERROR"
+        Write-Log -Message "Hướng dẫn: Sao chép NTUSER.DAT hợp lệ từ máy Windows 10 cùng build hoặc media cài đặt." -Level "WARN"
+    } else {
+        $sizeMB = [math]::Round((Get-Item $ntuser).Length/1MB,2)
+        Write-Log -Message ("NTUSER.DAT tồn tại, kích thước: {0} MB" -f $sizeMB)
+        if ($sizeMB -lt 0.2) {
+            Write-Log -Message "Cảnh báo: NTUSER.DAT kích thước bất thường (<0.2MB) -> có thể hỏng." -Level "WARN"
+        }
+    }
+}
+
+# endregion
+
+# region Sửa ProfileList .bak & dọn entry mồ côi
+Function Fix-ProfileListBak {
+    $base = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"
+    $keys = Get-ChildItem -Path $base -ErrorAction Stop
+
+    foreach ($k in $keys) {
+        $sid = Split-Path $k.PSChildName -Leaf
+        $isBak = $sid.EndsWith(".bak")
+        $plainSid = $sid -replace "\.bak$",""
+
+        if ($isBak) {
+            $nonBak = Join-Path $base $plainSid
+            if (Test-Path $nonBak) {
+                Write-Log -Message ("Phát hiện cặp SID: {0} và {1} -> tiến hành sửa theo chuẩn" -f $sid, $plainSid)
+                try {
+                    Set-ItemProperty -Path $k.PSPath -Name "RefCount" -Value 0 -ErrorAction SilentlyContinue
+                    Set-ItemProperty -Path $k.PSPath -Name "State" -Value 0 -ErrorAction SilentlyContinue
+
+                    # Đổi tên key: nonBak -> .tmp, bak -> nonBak, xóa .tmp
+                    $tmp = $plainSid + ".tmp"
+                    & reg.exe rename ("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\" + $plainSid) $tmp /f | Out-Null
+                    & reg.exe rename ("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\" + $sid) $plainSid /f | Out-Null
+                    Remove-Item -Path (Join-Path $base $tmp) -Recurse -Force -ErrorAction SilentlyContinue
+                    Write-Log -Message ("Đã xử lý SID .bak -> {0}" -f $plainSid)
+                } catch {
+                    Write-Log -Message ("Lỗi đổi tên SID .bak: {0}" -f $_) -Level "ERROR"
+                }
+            } else {
+                try {
+                    & reg.exe rename ("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\" + $sid) $plainSid /f | Out-Null
+                    Write-Log -Message ("Đổi tên {0} -> {1} (không có bản nonBak)" -f $sid, $plainSid)
+                } catch {
+                    Write-Log -Message ("Lỗi rename {0}: {1}" -f $sid, $_) -Level "ERROR"
+                }
+            }
+        }
+
+        # Dọn các profile mồ côi (đường dẫn không tồn tại) trừ các SID hệ thống
+        $pip = (Get-ItemProperty -Path $k.PSPath -ErrorAction SilentlyContinue).ProfileImagePath
+        if ($pip) {
+            $specialSids = @("S-1-5-18","S-1-5-19","S-1-5-20")
+            $sidPlain = $sid -replace "\.bak$",""
+            $skip = $specialSids | Where-Object { $sidPlain.StartsWith($_) }
+            if (-not $skip) {
+                if (-not (Test-Path $pip)) {
+                    Write-Log -Message ("Profile SID {0} trỏ đến '{1}' không tồn tại -> xóa để tránh xung đột" -f $sidPlain, $pip)
+                    try {
+                        Remove-Item -Path $k.PSPath -Recurse -Force
+                        Write-Log -Message ("Đã xóa SID {0} mồ côi" -f $sidPlain)
+                    } catch {
+                        Write-Log -Message ("Không thể xóa SID {0}: {1}" -f $sidPlain, $_) -Level "WARN"
+                    }
+                }
+            }
+        }
+    }
+}
+
+# endregion
+
+# region Xuất & cảnh báo 'Deny log on locally' (nếu có)
+Function Check-DenyLogonLocally {
+    try {
+        $cfg = Join-Path $backupDir "secpol_$timestamp.inf"
+        secedit /export /cfg $cfg | Out-Null
+        if (Test-Path $cfg) {
+            $lines = Get-Content $cfg
+            $deny = $lines | Where-Object { $_ -match "^SeDenyInteractiveLogonRight\s*=" }
+            if ($deny) {
+                Write-Log -Message ("Phát hiện cấu hình 'Deny log on locally': {0}" -f ($deny -join "; ")) -Level "WARN"
+                Write-Log -Message "Nếu chứa 'Users' hoặc tài khoản mục tiêu, cần gỡ chính sách này trong Local Security Policy (secpol.msc)." -Level "WARN"
+            } else {
+                Write-Log -Message "Không thấy cấu hình 'Deny log on locally'."
+            }
+        }
+    } catch {
+        Write-Log -Message ("Không thể xuất Local Security Policy: {0}" -f $_) -Level "WARN"
+    }
+}
+
+# endregion
+
+# region Khuyến nghị SFC/DISM (tùy chọn)
+Function Run-SystemIntegrityCheck {
+    param([switch]$RunNow)
+    if ($RunNow) {
+        try {
+            Write-Log -Message "Chạy DISM /RestoreHealth (có thể mất thời gian)..."
+            & DISM.exe /Online /Cleanup-Image /RestoreHealth | Tee-Object -FilePath (Join-Path $backupDir "DISM_RestoreHealth.log")
+            Write-Log -Message "Chạy SFC /SCANNOW..."
+            & sfc.exe /scannow | Tee-Object -FilePath (Join-Path $backupDir "SFC_scannow.log")
+        } catch {
+            Write-Log -Message ("DISM/SFC lỗi: {0}" -f $_) -Level "WARN"
+        }
+    } else {
+        Write-Log -Message "Khuyến nghị chạy DISM & SFC nếu lỗi vẫn còn: DISM /Online /Cleanup-Image /RestoreHealth ; sfc /scannow" -Level "INFO"
     }
 }
 
@@ -375,39 +546,61 @@ function LoadUsers {
 $buttonCreateUser.Add_Click({
 
 try {
-    $newUser  = $textUserName.Text.Trim()
+        $newUser = $textUserName.Text.Trim()
     $fullName = $textFullName.Text.Trim()
     if (-not $newUser) {
-        [System.Windows.Forms.MessageBox]::Show("Vui long nhap User name.","Thong bao",
-            [System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        [System.Windows.Forms.MessageBox]::Show("Vui long nhap User name.","Thong bao",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
         return
     }
     if (-not (Test-IsAdmin)) {
-        [System.Windows.Forms.MessageBox]::Show("Can Admin rights de tao user.","Thong bao",
-            [System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
+        [System.Windows.Forms.MessageBox]::Show("Can Admin rights de tao user.","Thong bao",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Warning) | Out-Null
         return
     }
+    try {
+        Write-Log "Dang tao user '$newUser'..."
+        $password = ConvertTo-SecureString "123" -AsPlainText -Force
+        New-LocalUser -Name $newUser -FullName $fullName -Password $password -ErrorAction Stop
+        Set-LocalUser -Name $newUser -PasswordNeverExpires $true
+        & net.exe user $newUser /passwordchg:no | Out-Null
+        Add-LocalGroupMember -Group "Users" -Member $newUser -ErrorAction SilentlyContinue
+        LoadUsers $newUser
+        $textUserName.Text = ""
+        $textFullName.Text = ""
+        Write-Log "Da tao user '$newUser' thanh cong."
+    } catch {
+        Write-Log "Loi khi tao user: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show("Loi khi tao user: $($_.Exception.Message)","Loi",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+    }
+# region Chuẩn bị log & kiểm tra quyền
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$LogFile = Join-Path $env:TEMP "FixUserProfile_$timestamp.log"
+$ErrorActionPreference = "Stop"
 
-    Write-Log "Dang tao user '$newUser'..."
-    $password = ConvertTo-SecureString "123" -AsPlainText -Force
-    New-LocalUser -Name $newUser -FullName $fullName -Password $password -ErrorAction Stop
-    Set-LocalUser -Name $newUser -PasswordNeverExpires $true
-    & net.exe user $newUser /passwordchg:no | Out-Null
-    Add-LocalGroupMember -Group "Users" -Member $newUser -ErrorAction SilentlyContinue
-    Write-Log "Da tao user '$newUser'. Dang khoi tao profile khong can login..."
-
-    # >>> GỌI HÀM FIX PROFILEx ACL <<<
-    Initialize-LocalUserProfile -UserName $newUser
-
-    LoadUsers $newUser
-    $textUserName.Text = ""
-    $textFullName.Text = ""
-    Write-Log "Hoan tat tao user '$newUser' + profile (fix GPSVC/Access denied)."
-} catch {
-    Write-Log "Loi khi tao user/profile: $($_.Exception.Message)"
-    [System.Windows.Forms.MessageBox]::Show("Loi khi tao user/profile: $($_.Exception.Message)",
-        "Loi",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+Write-Log -Message "=== Bắt đầu FixUserProfile ==="
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
+    Write-Log -Message "Script cần chạy với quyền Administrator. Thoát..." -Level "ERROR"
+    throw "Vui lòng mở PowerShell 'Run as Administrator'."
 }
+# Xác nhận phiên bản Windows 10
+$os = (Get-CimInstance Win32_OperatingSystem)
+Write-Log -Message ("Hệ điều hành: {0} {1}" -f $os.Caption, $os.Version)
+$backupDir = Join-Path $env:TEMP "FixUserProfile_Backup_$timestamp"
+New-Item -Path $backupDir -ItemType Directory -Force | Out-Null
+Backup-RegistryKey -RegPath "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -FileName "Winlogon.reg"
+Backup-RegistryKey -RegPath "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList" -FileName "ProfileList.reg"
+Ensure-UserProfileService
+Fix-WinlogonKeys
+Check-SystemDriveFreeSpace
+Reset-UsersAcl -Path "C:\Users"
+Reset-UsersAcl -Path "C:\Users\Default"
+Test-DefaultProfileHealth
+Fix-ProfileListBak
+Check-DenyLogonLocally
+Run-SystemIntegrityCheck
+# endregion
+
+Write-Log -Message ("=== Hoàn tất. Log lưu tại: {0} ===" -f $LogFile)
+Write-Host "`n-> Vui lòng khởi động lại máy và thử đăng nhập lại tài khoản mới."
 
 })
 
