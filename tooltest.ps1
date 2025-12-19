@@ -628,6 +628,7 @@ $buttonExecute.Add_Click({
         Write-Log "Dang thuc thi Deny Zalo cho '$userName'..."
         Set-DenyZalo -UserName $userName
         [System.Windows.Forms.MessageBox]::Show("Da chan Zalo cho user '$userName' thanh cong.","Thanh cong",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Information) | Out-Null
+        Start-Process "lusrmgr.msc"
     } catch {
         Write-Log "Loi: $($_.Exception.Message)"
         [System.Windows.Forms.MessageBox]::Show("Loi: $($_.Exception.Message)","Loi",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
