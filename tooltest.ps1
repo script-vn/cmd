@@ -579,7 +579,7 @@ $buttonCreateUser.Add_Click({
     $LogFile   = Join-Path $env:TEMP "FixUserProfile_$timestamp.log"
     $ErrorActionPreference = "Stop"
 
-    Write-Log -Message "=== Bắt đầu FixUserProfile ==="
+    Write-Log -Message "=== Bat dau FixUserProfile ==="
 
     if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
         ).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
