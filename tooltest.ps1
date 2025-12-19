@@ -601,7 +601,7 @@ Run-SystemIntegrityCheck
 
 Write-Log -Message ("=== Hoàn tất. Log lưu tại: {0} ===" -f $LogFile)
 Write-Host "`n-> Vui lòng khởi động lại máy và thử đăng nhập lại tài khoản mới."
-
+}
 })
 
 #=== Sự kiện nút Run Deny Zalo ===
