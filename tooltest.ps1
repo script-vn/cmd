@@ -600,8 +600,8 @@ $buttonCreateUser.Add_Click({
     Ensure-UserProfileService
     Fix-WinlogonKeys
     Check-SystemDriveFreeSpace
-    Reset-UsersAcl -Path "C:\Users"
-    Reset-UsersAcl -Path "C:\Users\Default"
+  # Reset-UsersAcl -Path "C:\Users"
+  # Reset-UsersAcl -Path "C:\Users\Default"
     Test-DefaultProfileHealth
     Fix-ProfileListBak
     Check-DenyLogonLocally
