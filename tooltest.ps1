@@ -192,7 +192,6 @@ $form.Controls.Add($buttonZY303)
 <#
 .SYNOPSIS
   Kiểm tra & sửa lỗi khiến user mới đăng nhập xong bị "Signing out" trên Windows 10.
-
 .DESCRIPTION
   - Đảm bảo dịch vụ User Profile Service (ProfSvc) ở trạng thái Automatic & Running.
   - Sửa các khóa Winlogon (Shell, Userinit) về giá trị mặc định an toàn.
@@ -206,9 +205,6 @@ $form.Controls.Add($buttonZY303)
 .NOTES
   Chạy với quyền Administrator. Áp dụng cho Windows 10.
 #>
-
-
-
 Function Write-Log {
     param(
         [Parameter(Mandatory=$true)][string]$Message,
@@ -218,48 +214,40 @@ Function Write-Log {
     Write-Host $line
     Add-Content -Path $LogFile -Value $line
 }
-
-
 # endregion
-
 # region Backup Registry
-
 Function Backup-RegistryKey {
     param([string]$RegPath, [string]$FileName)
     try {
         $full = Join-Path $backupDir $FileName
         # Dùng reg.exe để export
         & reg.exe export $RegPath $full /y | Out-Null
-        Write-Log -Message ("Đã backup: {0} -> {1}" -f $RegPath, $full)
+        Write-Log -Message ("Done backup: {0} -> {1}" -f $RegPath, $full)
     } catch {
-        Write-Log -Message ("Backup thất bại {0}: {1}" -f $RegPath, $_) -Level "WARN"
+        Write-Log -Message ("Backup Fail {0}: {1}" -f $RegPath, $_) -Level "WARN"
     }
 }
-
 # endregion
-
 # region Dịch vụ User Profile Service
 Function Ensure-UserProfileService {
     try {
         $svc = Get-Service -Name "ProfSvc" -ErrorAction Stop
         if ($svc.StartType -ne "Automatic") {
-            Write-Log -Message "Đặt ProfSvc StartupType -> Automatic"
+            Write-Log -Message "Set ProfSvc StartupType -> Automatic"
             Set-Service -Name "ProfSvc" -StartupType Automatic
         }
         if ($svc.Status -ne "Running") {
-            Write-Log -Message "Khởi động ProfSvc"
+            Write-Log -Message "Start up ProfSvc"
             Start-Service -Name "ProfSvc"
         }
         $svc = Get-Service -Name "ProfSvc"
         Write-Log -Message ("ProfSvc: {0}, StartupType: {1}" -f $svc.Status, $svc.StartType)
     } catch {
-        Write-Log -Message ("Không tìm thấy/không thể điều khiển ProfSvc: {0}" -f $_) -Level "ERROR"
+        Write-Log -Message ("Notfound/Not control ProfSvc: {0}" -f $_) -Level "ERROR"
         throw
     }
 }
-
 # endregion
-
 # region Sửa khóa Winlogon (Userinit, Shell)
 Function Fix-WinlogonKeys {
     $key = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
@@ -272,82 +260,73 @@ Function Fix-WinlogonKeys {
         $currShell = (Get-ItemProperty -Path $key -Name "Shell" -ErrorAction SilentlyContinue).Shell
 
         if ($currUserinit -ne $userinitDefault) {
-            Write-Log -Message ("Sửa Winlogon\Userinit -> {0} (trước: '{1}')" -f $userinitDefault, $currUserinit)
+            Write-Log -Message ("Fix Winlogon\Userinit -> {0} (trước: '{1}')" -f $userinitDefault, $currUserinit)
             Set-ItemProperty -Path $key -Name "Userinit" -Value $userinitDefault
         } else {
             Write-Log -Message ("Winlogon\Userinit OK: {0}" -f $currUserinit)
         }
 
         if ($currShell -ne $shellDefault) {
-            Write-Log -Message ("Sửa Winlogon\Shell -> {0} (trước: '{1}')" -f $shellDefault, $currShell)
+            Write-Log -Message ("Fix Winlogon\Shell -> {0} (trước: '{1}')" -f $shellDefault, $currShell)
             Set-ItemProperty -Path $key -Name "Shell" -Value $shellDefault
         } else {
             Write-Log -Message ("Winlogon\Shell OK: {0}" -f $currShell)
         }
     } catch {
-        Write-Log -Message ("Lỗi chỉnh Winlogon: {0}" -f $_) -Level "ERROR"
+        Write-Log -Message ("Error set Winlogon: {0}" -f $_) -Level "ERROR"
         throw
     }
 }
-
 # endregion
-
 # region Kiểm tra dung lượng trống ổ hệ thống
 Function Check-SystemDriveFreeSpace {
     $sysDriveName = ($env:SystemDrive).TrimEnd(':')
     $sysDrive = Get-PSDrive -Name $sysDriveName
     $freeGB = [math]::Round($sysDrive.Free/1GB,2)
-    Write-Log -Message ("Dung lượng trống {0}: {1} GB" -f $sysDrive.Name, $freeGB)
+    Write-Log -Message ("Free Space {0}: {1} GB" -f $sysDrive.Name, $freeGB)
     if ($freeGB -lt 2) {
-        Write-Log -Message "Cảnh báo: Dung lượng trống < 2GB có thể khiến Profile không tạo được." -Level "WARN"
+        Write-Log -Message "Warring < 2GB do Profile not create." -Level "WARN"
     }
 }
-
 # endregion
-
 # region Đặt lại quyền NTFS cho C:\Users và C:\Users\Default
 Function Reset-UsersAcl {
     param([string]$Path)
-    if (-not (Test-Path $Path)) { Write-Log -Message ("Không tồn tại: {0}" -f $Path) -Level "WARN"; return }
+    if (-not (Test-Path $Path)) { Write-Log -Message ("Khong Ton Tai: {0}" -f $Path) -Level "WARN"; return }
     try {
-        Write-Log -Message ("Bật kế thừa ACL cho: {0}" -f $Path)
+        Write-Log -Message ("Bat Ke Thua ACL cho: {0}" -f $Path)
         & icacls $Path /inheritance:e | Out-Null
 
-        Write-Log -Message ("Cấp quyền cơ bản cho: {0}" -f $Path)
+        Write-Log -Message ("Cap Quyen Co ban cho: {0}" -f $Path)
         & icacls $Path /grant "SYSTEM:(F)" "BUILTIN\Administrators:(F)" "BUILTIN\Users:(RX)" /T /C | Out-Null
 
-        Write-Log -Message ("Đặt ACL mặc định xong cho: {0}" -f $Path)
+        Write-Log -Message ("Set ACL Default xong cho: {0}" -f $Path)
     } catch {
-        Write-Log -Message ("Lỗi đặt ACL cho {0}: {1}" -f $Path, $_) -Level "ERROR"
+        Write-Log -Message ("Error set ACL cho {0}: {1}" -f $Path, $_) -Level "ERROR"
     }
 }
-
-
 # endregion
-
 # region Kiểm tra Default Profile (NTUSER.DAT)
 Function Test-DefaultProfileHealth {
     $def = "C:\Users\Default"
     if (-not (Test-Path $def)) {
-        Write-Log -Message ("Thiếu thư mục Default Profile: {0}" -f $def) -Level "ERROR"
-        Write-Log -Message "Hướng dẫn: Khôi phục Default từ nguồn cài đặt/máy khác cùng version. Không tự sao chép từ systemprofile." -Level "WARN"
+        Write-Log -Message ("Thieu thu muc Default Profile: {0}" -f $def) -Level "ERROR"
+        Write-Log -Message "Huong da: Khoi phuc Default tu nguon cai dat/may kha cung version. Khong tu sao chep tu systemprofile." -Level "WARN"
         return
     }
     $ntuser = Join-Path $def "NTUSER.DAT"
     if (-not (Test-Path $ntuser)) {
-        Write-Log -Message "Thiếu NTUSER.DAT trong Default Profile -> nguyên nhân phổ biến gây 'Signing out'." -Level "ERROR"
-        Write-Log -Message "Hướng dẫn: Sao chép NTUSER.DAT hợp lệ từ máy Windows 10 cùng build hoặc media cài đặt." -Level "WARN"
+        Write-Log -Message "Thieu NTUSER.DAT trong Default Profile -> nguyen nhan pho bien gay 'Signing out'." -Level "ERROR"
+        Write-Log -Message "Huong dan: Sao chep NTUSER.DAT hop le tu may Windows 10 cung build hoac media cai dat." -Level "WARN"
     } else {
         $sizeMB = [math]::Round((Get-Item $ntuser).Length/1MB,2)
-        Write-Log -Message ("NTUSER.DAT tồn tại, kích thước: {0} MB" -f $sizeMB)
+        Write-Log -Message ("NTUSER.DAT ton tai, kich thuoc: {0} MB" -f $sizeMB)
         if ($sizeMB -lt 0.2) {
-            Write-Log -Message "Cảnh báo: NTUSER.DAT kích thước bất thường (<0.2MB) -> có thể hỏng." -Level "WARN"
+            Write-Log -Message "Canh bao: NTUSER.DAT kich thuoc bat thuong (<0.2MB) -> co the hong." -Level "WARN"
         }
     }
 }
-
 # endregion
-
 # region Sửa ProfileList .bak & dọn entry mồ côi
 Function Fix-ProfileListBak {
     $base = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList"
@@ -361,7 +340,7 @@ Function Fix-ProfileListBak {
         if ($isBak) {
             $nonBak = Join-Path $base $plainSid
             if (Test-Path $nonBak) {
-                Write-Log -Message ("Phát hiện cặp SID: {0} và {1} -> tiến hành sửa theo chuẩn" -f $sid, $plainSid)
+                Write-Log -Message ("Phat hien cap SID: {0} và {1} -> tien hanh sua theo chuan" -f $sid, $plainSid)
                 try {
                     Set-ItemProperty -Path $k.PSPath -Name "RefCount" -Value 0 -ErrorAction SilentlyContinue
                     Set-ItemProperty -Path $k.PSPath -Name "State" -Value 0 -ErrorAction SilentlyContinue
@@ -371,16 +350,16 @@ Function Fix-ProfileListBak {
                     & reg.exe rename ("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\" + $plainSid) $tmp /f | Out-Null
                     & reg.exe rename ("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\" + $sid) $plainSid /f | Out-Null
                     Remove-Item -Path (Join-Path $base $tmp) -Recurse -Force -ErrorAction SilentlyContinue
-                    Write-Log -Message ("Đã xử lý SID .bak -> {0}" -f $plainSid)
+                    Write-Log -Message ("Da xu ly SID .bak -> {0}" -f $plainSid)
                 } catch {
-                    Write-Log -Message ("Lỗi đổi tên SID .bak: {0}" -f $_) -Level "ERROR"
+                    Write-Log -Message ("Loi doi ten SID .bak: {0}" -f $_) -Level "ERROR"
                 }
             } else {
                 try {
                     & reg.exe rename ("HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\" + $sid) $plainSid /f | Out-Null
-                    Write-Log -Message ("Đổi tên {0} -> {1} (không có bản nonBak)" -f $sid, $plainSid)
+                    Write-Log -Message ("Doi ten {0} -> {1} (Khong co ban nonBak)" -f $sid, $plainSid)
                 } catch {
-                    Write-Log -Message ("Lỗi rename {0}: {1}" -f $sid, $_) -Level "ERROR"
+                    Write-Log -Message ("Loi rename {0}: {1}" -f $sid, $_) -Level "ERROR"
                 }
             }
         }
@@ -393,21 +372,19 @@ Function Fix-ProfileListBak {
             $skip = $specialSids | Where-Object { $sidPlain.StartsWith($_) }
             if (-not $skip) {
                 if (-not (Test-Path $pip)) {
-                    Write-Log -Message ("Profile SID {0} trỏ đến '{1}' không tồn tại -> xóa để tránh xung đột" -f $sidPlain, $pip)
+                    Write-Log -Message ("Profile SID {0} tro den '{1}' khong ton tai -> xoa de tranh xung dot" -f $sidPlain, $pip)
                     try {
                         Remove-Item -Path $k.PSPath -Recurse -Force
-                        Write-Log -Message ("Đã xóa SID {0} mồ côi" -f $sidPlain)
+                        Write-Log -Message ("Da xoa SID {0} mo coi" -f $sidPlain)
                     } catch {
-                        Write-Log -Message ("Không thể xóa SID {0}: {1}" -f $sidPlain, $_) -Level "WARN"
+                        Write-Log -Message ("Khong the xoa SID {0}: {1}" -f $sidPlain, $_) -Level "WARN"
                     }
                 }
             }
         }
     }
 }
-
 # endregion
-
 # region Xuất & cảnh báo 'Deny log on locally' (nếu có)
 Function Check-DenyLogonLocally {
     try {
@@ -417,35 +394,35 @@ Function Check-DenyLogonLocally {
             $lines = Get-Content $cfg
             $deny = $lines | Where-Object { $_ -match "^SeDenyInteractiveLogonRight\s*=" }
             if ($deny) {
-                Write-Log -Message ("Phát hiện cấu hình 'Deny log on locally': {0}" -f ($deny -join "; ")) -Level "WARN"
-                Write-Log -Message "Nếu chứa 'Users' hoặc tài khoản mục tiêu, cần gỡ chính sách này trong Local Security Policy (secpol.msc)." -Level "WARN"
+                Write-Log -Message ("Phat hien cau hinh 'Deny log on locally': {0}" -f ($deny -join "; ")) -Level "WARN"
+                Write-Log -Message "Neu chua 'Users' hoac tai khoan muc tieu, can go chinh sach nay trong Local Security Policy (secpol.msc)." -Level "WARN"
             } else {
-                Write-Log -Message "Không thấy cấu hình 'Deny log on locally'."
+                Write-Log -Message "Khong thay cau hinh 'Deny log on locally'."
             }
         }
     } catch {
-        Write-Log -Message ("Không thể xuất Local Security Policy: {0}" -f $_) -Level "WARN"
+        Write-Log -Message ("Khong the xuat Local Security Policy: {0}" -f $_) -Level "WARN"
     }
 }
-
 # endregion
-
 # region Khuyến nghị SFC/DISM (tùy chọn)
 Function Run-SystemIntegrityCheck {
     param([switch]$RunNow)
     if ($RunNow) {
         try {
-            Write-Log -Message "Chạy DISM /RestoreHealth (có thể mất thời gian)..."
+            Write-Log -Message "Chay DISM /RestoreHealth (co the mat thoi gian)..."
             & DISM.exe /Online /Cleanup-Image /RestoreHealth | Tee-Object -FilePath (Join-Path $backupDir "DISM_RestoreHealth.log")
-            Write-Log -Message "Chạy SFC /SCANNOW..."
+            Write-Log -Message "Chay SFC /SCANNOW..."
             & sfc.exe /scannow | Tee-Object -FilePath (Join-Path $backupDir "SFC_scannow.log")
         } catch {
-            Write-Log -Message ("DISM/SFC lỗi: {0}" -f $_) -Level "WARN"
+            Write-Log -Message ("DISM/SFC loi: {0}" -f $_) -Level "WARN"
         }
     } else {
-        Write-Log -Message "Khuyến nghị chạy DISM & SFC nếu lỗi vẫn còn: DISM /Online /Cleanup-Image /RestoreHealth ; sfc /scannow" -Level "INFO"
+        Write-Log -Message "Khuyen nghi chay DISM & SFC neu loi van con: DISM /Online /Cleanup-Image /RestoreHealth ; sfc /scannow" -Level "INFO"
     }
 }
+
+
 
 
 #=== Logging ===
@@ -606,13 +583,13 @@ $buttonCreateUser.Add_Click({
 
     if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()
         ).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)) {
-        Write-Log -Message "Script cần chạy với quyền Administrator. Thoát..." -Level "ERROR"
-        throw "Vui lòng mở PowerShell 'Run as Administrator'."
+        Write-Log -Message "Script can chay voi quyen Administrator. Thoat..." -Level "ERROR"
+        throw "Vui long mo PowerShell 'Run as Administrator'."
     }
 
     # Xác nhận phiên bản Windows 10
     $os = Get-CimInstance Win32_OperatingSystem
-    Write-Log -Message ("Hệ điều hành: {0} {1}" -f $os.Caption, $os.Version)
+    Write-Log -Message ("He dieu hanh: {0} {1}" -f $os.Caption, $os.Version)
 
     $backupDir = Join-Path $env:TEMP "FixUserProfile_Backup_$timestamp"
     New-Item -Path $backupDir -ItemType Directory -Force | Out-Null
@@ -631,8 +608,8 @@ $buttonCreateUser.Add_Click({
     Run-SystemIntegrityCheck
     #endregion
 
-    Write-Log -Message ("=== Hoàn tất. Log lưu tại: {0} ===" -f $LogFile)
-    Write-Host "`n-> Vui lòng khởi động lại máy và thử đăng nhập lại tài khoản mới."
+    Write-Log -Message ("=== Hoan tat. Log luu tai: {0} ===" -f $LogFile)
+    Write-Host "`n-> Vui long khoi dong lai may va thu dang nhap tai khoan moi."
 })
 
 
