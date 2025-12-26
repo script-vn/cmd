@@ -721,17 +721,17 @@ $buttonPrinterDriver.Add_Click({
 
         # 1) Nếu đã có file hợp lệ -> dùng luôn, không tải lại
         if (Test-PrinterExportValid -path $destination -threshold $minSize) {
-            Write-Log "Phát hiện đã có file driver: $destination -> bỏ qua bước tải."
+        #    Write-Log "Phát hiện đã có file driver: $destination -> bỏ qua bước tải."
         } else {
             # 2) Chưa có/không hợp lệ -> tiến hành tải
-            Write-Log "Đang tải xuống file driver máy in..."
+            Write-Log ("Dang Tai Xuong file driver may in...")
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
             $downloadOk = $false
 
             try {
                 Invoke-WebRequest -Uri $url -OutFile $destination -UseBasicParsing -ErrorAction Stop
                 if (Test-PrinterExportValid -path $destination -threshold $minSize) {
-                    Write-Log "Đã tải xuống file driver tại $destination"
+                    Write-Log ("Da Tai Xuong file driver tại $destination")
                     $downloadOk = $true
                 } else {
                     Write-Log "Cảnh báo: file tải về quá nhỏ hoặc không hợp lệ (có thể là HTML do yêu cầu đăng nhập)."
@@ -768,7 +768,7 @@ $buttonPrinterDriver.Add_Click({
         if (Test-Path $printBrmPath) {
             # Nếu bạn muốn AUTO import thay vì mở UI, có thể dùng printbrm.exe phía dưới
             Start-Process $printBrmPath
-            Write-Log "Đã mở PrintBrmUi.exe để import driver."
+            Write-Log ("Da mo PrintBrmUi.exe de import driver.")
         } else {
             Write-Log "Không tìm thấy PrintBrmUi.exe tại $printBrmPath"
             [System.Windows.Forms.MessageBox]::Show(
