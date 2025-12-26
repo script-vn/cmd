@@ -701,7 +701,7 @@ $buttonPrinterDriver.Add_Click({
     try {
         Write-Log "Dang tai xuong file driver may in..."
         $url = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/EaSWlvxwl7RIljE-aEhCU3ABAKTlJG2jTIFv6hJxR9-5xA?download=1"
-        $destination = "D:\DriverPrinter.printerExport"
+        $destination = "D:\Tool\DriverPrinter.printerExport"
         Invoke-WebRequest -Uri $url -OutFile $destination
         Write-Log "Da tai xuong file driver tai $destination"
         $printBrmPath = "C:\Windows\System32\PrintBrmUi.exe"
@@ -867,7 +867,7 @@ $buttonBrother.Add_Click({
         $url      = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/IQDaZilunXpwTp2BNRbY6GfRAYE1e3fNHrM74a_YXaaUO58?download=1"
 
         # Thư mục & tên file đích
-        $destDir  = "D:\"
+        $destDir  = "D:\Tool\"
         $destFile = Join-Path $destDir "Brother_Printer_Driver.exe"
         $minSize  = 1024 * 100  # 100 KB - ngưỡng nhận diện file hợp lệ (tránh HTML)
 
@@ -968,7 +968,7 @@ $buttonBrother.Add_Click({
 $buttonUSB80C.Add_Click({
     try {
         $url      = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/IQB-e4-oDqmCQqEJDammgcCSAUSob7nF3HqU8PGYfFwq1IA?download=1"
-        $destDir  = "D:\"
+        $destDir  = "D:\Tool\"
         $destFile = Join-Path $destDir "USBZy303_Setup.exe"
         $minSize  = 1024 * 100  # 100 KB, ngưỡng để nhận diện file "thực" (tránh HTML)
 
@@ -1035,7 +1035,7 @@ $buttonUSB80C.Add_Click({
 $buttonZY303.Add_Click({
     try {
         $url      = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/IQASdgPSrQPoRbV7YqU8fz55AVWSMES8f86SVr_LjZPn2r4?download=1"
-        $destDir  = "D:\"
+        $destDir  = "D:\Tool\"
         $destFile = Join-Path $destDir "ZY303_Setup.exe"
         $minSize  = 1024 * 100  # 100 KB - ngưỡng để coi file hợp lệ (tránh HTML)
 
