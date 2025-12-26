@@ -697,18 +697,13 @@ $buttonSetIP.Add_Click({
 })
 
 #=== Sự kiện nút Driver Printer ===
+
 $buttonPrinterDriver.Add_Click({
     try {
         # ========== CẤU HÌNH ==========
         $url = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/EaSWlvxwl7RIljE-aEhCU3ABAKTlJG2jTIFv6hJxR9-5xA?download=1"
         $destination = "D:\Tool\DriverPrinter.printerExport"
         $minSize = 1024 * 10   # 10 KB - tránh file HTML nhỏ
-
-        # Hàm Log đơn giản (nếu bạn đã có Write-Log rồi, có thể bỏ qua định nghĩa này)
-        function Write-Log([string]$msg) {
-            $stamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-            Write-Host "[$stamp] $msg"
-        }
 
         # Hàm kiểm tra tệp .printerExport hợp lệ (tồn tại và đủ lớn)
         function Test-PrinterExportValid([string]$path, [int]$threshold) {
@@ -721,23 +716,23 @@ $buttonPrinterDriver.Add_Click({
 
         # 1) Nếu đã có file hợp lệ -> dùng luôn, không tải lại
         if (Test-PrinterExportValid -path $destination -threshold $minSize) {
-        #    Write-Log "Phát hiện đã có file driver: $destination -> bỏ qua bước tải."
+        #    Write-Log "Phat hien da co file driver: $destination -> bỏ qua bước tải."
         } else {
             # 2) Chưa có/không hợp lệ -> tiến hành tải
-            Write-Log ("Dang Tai Xuong file driver may in...")
+            Write-Log "Dang tai xuong file..."
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
             $downloadOk = $false
 
             try {
                 Invoke-WebRequest -Uri $url -OutFile $destination -UseBasicParsing -ErrorAction Stop
                 if (Test-PrinterExportValid -path $destination -threshold $minSize) {
-                    Write-Log ("Da Tai Xuong file driver tại $destination")
+                    Write-Log "Da ta xuong file tai $destination"
                     $downloadOk = $true
                 } else {
-                    Write-Log "Cảnh báo: file tải về quá nhỏ hoặc không hợp lệ (có thể là HTML do yêu cầu đăng nhập)."
+                    Write-Log "Cảnh báo: file tải về quá nhỏ hoặc không hợp lệ (có thể là HTML do yêu cầu đăng nhập).", "WARN"
                 }
             } catch {
-                Write-Log "Không tải được trực tiếp (có thể cần đăng nhập SharePoint)."
+                Write-Log "Không tải được trực tiếp (có thể cần đăng nhập SharePoint): $($_.Exception.Message)", "WARN"
             }
 
             # Fallback: nếu vẫn chưa có file hợp lệ, mở trình duyệt cho bạn đăng nhập/tải thủ công
@@ -757,7 +752,7 @@ $buttonPrinterDriver.Add_Click({
                     Start-Process $browserExe $url
                     Write-Log "Đã mở trình duyệt tới SharePoint, vui lòng đăng nhập và tải file .printerExport về: $destination"
                 } catch {
-                    Write-Log ("Lỗi khi mở trình duyệt: {0}. Thử mở bằng trình duyệt mặc định..." -f $_.Exception.Message)
+                    Write-Log ("Lỗi khi mở trình duyệt: {0}. Thử mở bằng trình duyệt mặc định..." -f $_.Exception.Message), "ERROR"
                     Start-Process $url
                 }
             }
@@ -766,11 +761,10 @@ $buttonPrinterDriver.Add_Click({
         # 3) Mở PrintBrmUi để import driver
         $printBrmPath = "C:\Windows\System32\PrintBrmUi.exe"
         if (Test-Path $printBrmPath) {
-            # Nếu bạn muốn AUTO import thay vì mở UI, có thể dùng printbrm.exe phía dưới
             Start-Process $printBrmPath
-            Write-Log ("Da mo PrintBrmUi.exe de import driver.")
+            Write-Log "Da mo PrintBrmUi.exe de import driver."
         } else {
-            Write-Log "Không tìm thấy PrintBrmUi.exe tại $printBrmPath"
+            Write-Log "Không tìm thấy PrintBrmUi.exe tại $printBrmPath", "ERROR"
             [System.Windows.Forms.MessageBox]::Show(
                 "Không tìm thấy PrintBrmUi.exe tại $printBrmPath",
                 "Lỗi",
@@ -779,7 +773,7 @@ $buttonPrinterDriver.Add_Click({
             ) | Out-Null
         }
     } catch {
-        Write-Log "Lỗi khi tải hoặc mở driver: $($_.Exception.Message)"
+        Write-Log "Lỗi khi tải hoặc mở driver: $($_.Exception.Message)", "ERROR"
         [System.Windows.Forms.MessageBox]::Show(
             "Lỗi: $($_.Exception.Message)",
             "Lỗi",
@@ -788,6 +782,7 @@ $buttonPrinterDriver.Add_Click({
         ) | Out-Null
     }
 })
+
 
 
 # Handler nút Set Permissions Dcorp
