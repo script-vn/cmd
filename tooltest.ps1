@@ -699,22 +699,93 @@ $buttonSetIP.Add_Click({
 #=== Sự kiện nút Driver Printer ===
 $buttonPrinterDriver.Add_Click({
     try {
-        Write-Log "Dang tai xuong file driver may in..."
+        # ========== CẤU HÌNH ==========
         $url = "https://sasinvn-my.sharepoint.com/:u:/g/personal/nam_tran_sasin_vn/EaSWlvxwl7RIljE-aEhCU3ABAKTlJG2jTIFv6hJxR9-5xA?download=1"
         $destination = "D:\Tool\DriverPrinter.printerExport"
-        Invoke-WebRequest -Uri $url -OutFile $destination
-        Write-Log "Da tai xuong file driver tai $destination"
+        $minSize = 1024 * 10   # 10 KB - tránh file HTML nhỏ
+
+        # Hàm Log đơn giản (nếu bạn đã có Write-Log rồi, có thể bỏ qua định nghĩa này)
+        function Write-Log([string]$msg) {
+            $stamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+            Write-Host "[$stamp] $msg"
+        }
+
+        # Hàm kiểm tra tệp .printerExport hợp lệ (tồn tại và đủ lớn)
+        function Test-PrinterExportValid([string]$path, [int]$threshold) {
+            if (-not (Test-Path $path)) { return $false }
+            try {
+                $len = (Get-Item $path).Length
+                return ($len -ge $threshold)
+            } catch { return $false }
+        }
+
+        # 1) Nếu đã có file hợp lệ -> dùng luôn, không tải lại
+        if (Test-PrinterExportValid -path $destination -threshold $minSize) {
+            Write-Log "Phát hiện đã có file driver: $destination -> bỏ qua bước tải."
+        } else {
+            # 2) Chưa có/không hợp lệ -> tiến hành tải
+            Write-Log "Đang tải xuống file driver máy in..."
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            $downloadOk = $false
+
+            try {
+                Invoke-WebRequest -Uri $url -OutFile $destination -UseBasicParsing -ErrorAction Stop
+                if (Test-PrinterExportValid -path $destination -threshold $minSize) {
+                    Write-Log "Đã tải xuống file driver tại $destination"
+                    $downloadOk = $true
+                } else {
+                    Write-Log "Cảnh báo: file tải về quá nhỏ hoặc không hợp lệ (có thể là HTML do yêu cầu đăng nhập)."
+                }
+            } catch {
+                Write-Log "Không tải được trực tiếp (có thể cần đăng nhập SharePoint)."
+            }
+
+            # Fallback: nếu vẫn chưa có file hợp lệ, mở trình duyệt cho bạn đăng nhập/tải thủ công
+            if (-not $downloadOk) {
+                Write-Log "Đang mở trình duyệt để bạn đăng nhập/tải thủ công..."
+                try {
+                    $chromePaths = @(
+                        "$Env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+                        "$Env:ProgramFiles(x86)\Google\Chrome\Application\chrome.exe"
+                    )
+                    $edgePaths = @(
+                        "$Env:ProgramFiles (x86)\Microsoft\Edge\Application\msedge.exe",
+                        "$Env:ProgramFiles\Microsoft\Edge\Application\msedge.exe"
+                    )
+                    $browserExe = ($chromePaths + $edgePaths) | Where-Object { Test-Path $_ } | Select-Object -First 1
+                    if (-not $browserExe) { $browserExe = "msedge.exe" }
+                    Start-Process $browserExe $url
+                    Write-Log "Đã mở trình duyệt tới SharePoint, vui lòng đăng nhập và tải file .printerExport về: $destination"
+                } catch {
+                    Write-Log ("Lỗi khi mở trình duyệt: {0}. Thử mở bằng trình duyệt mặc định..." -f $_.Exception.Message)
+                    Start-Process $url
+                }
+            }
+        }
+
+        # 3) Mở PrintBrmUi để import driver
         $printBrmPath = "C:\Windows\System32\PrintBrmUi.exe"
         if (Test-Path $printBrmPath) {
+            # Nếu bạn muốn AUTO import thay vì mở UI, có thể dùng printbrm.exe phía dưới
             Start-Process $printBrmPath
-            Write-Log "Da mo PrintBrmUi.exe de import driver."
+            Write-Log "Đã mở PrintBrmUi.exe để import driver."
         } else {
-            Write-Log "Khong tim thay PrintBrmUi.exe tai $printBrmPath"
-            [System.Windows.Forms.MessageBox]::Show("Khong tim thay PrintBrmUi.exe","Loi",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+            Write-Log "Không tìm thấy PrintBrmUi.exe tại $printBrmPath"
+            [System.Windows.Forms.MessageBox]::Show(
+                "Không tìm thấy PrintBrmUi.exe tại $printBrmPath",
+                "Lỗi",
+                [System.Windows.Forms.MessageBoxButtons]::OK,
+                [System.Windows.Forms.MessageBoxIcon]::Error
+            ) | Out-Null
         }
     } catch {
-        Write-Log "Loi khi tai hoac mo driver: $($_.Exception.Message)"
-        [System.Windows.Forms.MessageBox]::Show("Loi: $($_.Exception.Message)","Loi",[System.Windows.Forms.MessageBoxButtons]::OK,[System.Windows.Forms.MessageBoxIcon]::Error) | Out-Null
+        Write-Log "Lỗi khi tải hoặc mở driver: $($_.Exception.Message)"
+        [System.Windows.Forms.MessageBox]::Show(
+            "Lỗi: $($_.Exception.Message)",
+            "Lỗi",
+            [System.Windows.Forms.MessageBoxButtons]::OK,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        ) | Out-Null
     }
 })
 
