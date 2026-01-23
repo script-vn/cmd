@@ -4,7 +4,7 @@ $username = $loggedInUser.Split('\')[-1]
 $sid = (Get-WmiObject Win32_UserAccount | Where-Object { $_.Name -eq $username }).SID
 Write-Output "User: $username"
 Write-Output "SID: $sid"
-$services = Get-Service | Where-Object { $_.Name -match "rAgent" -or $_.Name -match "FARCARDS" }
+$services = Get-Service | Where-Object { $_.Name -match "rAgent" -or $_.Name -match "FARCARDS" -or $_.Name -match "Skymonitor" }
 if ($services.Count -gt 0) {
     foreach ($svc in $services) {
 
