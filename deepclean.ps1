@@ -1,5 +1,5 @@
 # ================================
-# DEEP CLEAN + INSTALL 7ZIP + CHECK APP
+# DEEP CLEAN + OFFICE FULL CLEAN + INSTALL 7ZIP
 # ================================
 
 # ✅ Check Admin
@@ -31,13 +31,69 @@ try {
 # -------------------------------
 Write-Host "`n[2] Stop services..." -ForegroundColor Yellow
 
-Get-Service ClickToRunSvc -ErrorAction SilentlyContinue | Stop-Service -Force
+$services = @("ClickToRunSvc","OfficeSvc")
+foreach ($svc in $services) {
+    Get-Service $svc -ErrorAction SilentlyContinue | Stop-Service -Force
+}
+
+# Kill Office process
+$procs = @("winword","excel","powerpnt","outlook","onenote","msaccess","lync")
+foreach ($p in $procs) {
+    Get-Process $p -ErrorAction SilentlyContinue | Stop-Process -Force
+}
 
 # -------------------------------
-# 3. UNINSTALL APP
+# 3. ✅ FULL CLEAN OFFICE (AUTO DETECT)
+# -------------------------------
+Write-Host "`n[3] FULL CLEAN Microsoft Office..." -ForegroundColor Yellow
+
+$officeFound = $false
+
+# --- MSI uninstall ---
+$paths = @(
+    "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*",
+    "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
+)
+
+foreach ($path in $paths) {
+    Get-ItemProperty $path -ErrorAction SilentlyContinue | Where-Object {
+        $_.DisplayName -match "Microsoft Office"
+    } | ForEach-Object {
+
+        $name = $_.DisplayName
+        $guid = $_.PSChildName
+
+        Write-Host "➡ Found: $name"
+
+        if ($guid -match "^{.*}$") {
+            Start-Process "msiexec.exe" -ArgumentList "/x $guid /quiet /norestart" -Wait
+            Write-Host "✅ Removed MSI: $name"
+            $officeFound = $true
+        } elseif ($_.UninstallString) {
+            Start-Process "cmd.exe" -ArgumentList "/c $($_.UninstallString)" -Wait
+            Write-Host "✅ Removed CMD: $name"
+            $officeFound = $true
+        }
+    }
+}
+
+# --- Click-to-Run ---
+$ctr = "C:\Program Files\Common Files\Microsoft Shared\ClickToRun\OfficeClickToRun.exe"
+if (Test-Path $ctr) {
+    Write-Host "➡ Removing Click-to-Run Office..."
+    Start-Process $ctr -ArgumentList "scenario=install scenariosubtype=uninstall" -Wait
+    Write-Host "✅ Removed CTR Office"
+    $officeFound = $true
+}
+
+if (-not $officeFound) {
+    Write-Host "⚠ Not found Office"
+}
+
+# -------------------------------
+# 4. ✅ UNINSTALL WINRAR
 # -------------------------------
 function Uninstall-App($keyword) {
-
     $paths = @(
         "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*",
         "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
@@ -48,44 +104,37 @@ function Uninstall-App($keyword) {
             $_.DisplayName -like "*$keyword*"
         } | ForEach-Object {
 
-            $name = $_.DisplayName
-            $uninstall = $_.UninstallString
+            Write-Host "➡ UnInstall: $($_.DisplayName)"
 
-            Write-Host "➡ Gỡ: $name"
-
-            if ($uninstall) {
-                if ($uninstall -match "msiexec") {
-                    $cmd = $uninstall -replace "/I", "/X"
-                    Start-Process cmd.exe -ArgumentList "/c $cmd /quiet /norestart" -Wait
-                } else {
-                    Start-Process cmd.exe -ArgumentList "/c `"$uninstall`" /quiet /norestart" -Wait
-                }
+            if ($_.UninstallString) {
+                Start-Process cmd.exe -ArgumentList "/c $($_.UninstallString) /quiet" -Wait
             }
         }
     }
 }
 
-Write-Host "`n[3] UnInstall Office + WinRAR..."
-Uninstall-App "Microsoft Office"
+Write-Host "`n[4] UnInstall WinRAR..."
 Uninstall-App "WinRAR"
 
 # -------------------------------
 # ✅ MỞ PROGRAMS AND FEATURES
 # -------------------------------
-Write-Host "`n[4] Open App check..." -ForegroundColor Cyan
+Write-Host "`n[5] Open App check..." -ForegroundColor Cyan
 Start-Process "appwiz.cpl"
 
 # -------------------------------
-# 5. DELETE FOLDERS
+# 6. DELETE FOLDERS
 # -------------------------------
-Write-Host "`n[5] Clear folder..." -ForegroundColor Yellow
+Write-Host "`n[6] Clear folder..." -ForegroundColor Yellow
 
 $folders = @(
     "C:\Program Files\Microsoft Office",
     "C:\Program Files (x86)\Microsoft Office",
+    "C:\Program Files\Common Files\Microsoft Shared\ClickToRun",
     "$env:ProgramData\Microsoft\Office",
     "$env:APPDATA\Microsoft\Office",
     "$env:LOCALAPPDATA\Microsoft\Office",
+
     "C:\Program Files\WinRAR",
     "$env:APPDATA\WinRAR"
 )
@@ -97,9 +146,37 @@ foreach ($f in $folders) {
 }
 
 # -------------------------------
-# 6. INSTALL 7-ZIP
+# 7. REMOVE REGISTRY + MSI CACHE
 # -------------------------------
-Write-Host "`n[6] SetUp 7-Zip..." -ForegroundColor Yellow
+Write-Host "`n[7] Clean registry..." -ForegroundColor Yellow
+
+$regs = @(
+    "HKCU:\Software\Microsoft\Office",
+    "HKLM:\Software\Microsoft\Office",
+    "HKLM:\Software\WOW6432Node\Microsoft\Office"
+)
+
+foreach ($r in $regs) {
+    if (Test-Path $r) {
+        Remove-Item $r -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# MSI cache
+Get-ChildItem "HKLM:\Software\Classes\Installer\Products" | ForEach-Object {
+    $p = $_.PSPath
+    $name = (Get-ItemProperty $p -ErrorAction SilentlyContinue).ProductName
+
+    if ($name -like "*Office*") {
+        Remove-Item $p -Recurse -Force -ErrorAction SilentlyContinue
+        Write-Host "🧨 Removed MSI cache: $name"
+    }
+}
+
+# -------------------------------
+# 8. INSTALL 7-ZIP
+# -------------------------------
+Write-Host "`n[8] SetUp 7-Zip..." -ForegroundColor Yellow
 
 $toolPath = "D:\Tool"
 $installer = "$toolPath\7zip.exe"
@@ -112,25 +189,22 @@ $url = "https://www.7-zip.org/a/7z2301-x64.exe"
 
 try {
     Invoke-WebRequest -Uri $url -OutFile $installer
-    Write-Host "✅ Download xong 7-Zip"
-
     Start-Process -FilePath $installer -ArgumentList "/S" -Wait
     Write-Host "✅ Done 7-Zip"
-
 } catch {
     Write-Host "❌ Error Download/Setup: $_"
 }
 
 # -------------------------------
-# 7. CLEAN TEMP
+# 9. CLEAN TEMP
 # -------------------------------
-Write-Host "`n[7] Cleanup temp..." -ForegroundColor Yellow
+Write-Host "`n[9] Cleanup temp..." -ForegroundColor Yellow
 Remove-Item "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
 
 # -------------------------------
 # DONE
 # -------------------------------
 Write-Host "`n🔥 HOAN TAT!" -ForegroundColor Green
-Write-Host "👉 |check on Programs and Features" -ForegroundColor Cyan
+Write-Host "👉 Check lai trong Programs and Features" -ForegroundColor Cyan
 
 Pause
