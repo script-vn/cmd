@@ -7,7 +7,7 @@ if (-not ([Security.Principal.WindowsPrincipal] `
 [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(`
 [Security.Principal.WindowsBuiltInRole]::Administrator)) {
 
-    Write-Host "❌ Vui lòng chạy bằng Administrator!" -ForegroundColor Red
+    Write-Host "❌ Run with Administrator!" -ForegroundColor Red
     exit
 }
 
@@ -16,14 +16,14 @@ Write-Host "=== 🔥 BAT DAU DEEP CLEAN 🔥 ===" -ForegroundColor Cyan
 # -------------------------------
 # 1. REMOVE WINDOWS KEY
 # -------------------------------
-Write-Host "`n[1] Gỡ key Windows..." -ForegroundColor Yellow
+Write-Host "`n[1] UnInstall key Windows..." -ForegroundColor Yellow
 
 try {
     cscript //nologo $env:SystemRoot\System32\slmgr.vbs /upk
     cscript //nologo $env:SystemRoot\System32\slmgr.vbs /cpky
-    Write-Host "✅ Đã gỡ key Windows"
+    Write-Host "✅ Clear key Windows"
 } catch {
-    Write-Host "❌ Lỗi: $_"
+    Write-Host "❌ Error: $_"
 }
 
 # -------------------------------
@@ -65,20 +65,20 @@ function Uninstall-App($keyword) {
     }
 }
 
-Write-Host "`n[3] Gỡ Office + WinRAR..."
+Write-Host "`n[3] UnInstall Office + WinRAR..."
 Uninstall-App "Microsoft Office"
 Uninstall-App "WinRAR"
 
 # -------------------------------
 # ✅ MỞ PROGRAMS AND FEATURES
 # -------------------------------
-Write-Host "`n[4] Mở danh sách ứng dụng để kiểm tra..." -ForegroundColor Cyan
+Write-Host "`n[4] Open App check..." -ForegroundColor Cyan
 Start-Process "appwiz.cpl"
 
 # -------------------------------
 # 5. DELETE FOLDERS
 # -------------------------------
-Write-Host "`n[5] Xóa folder..." -ForegroundColor Yellow
+Write-Host "`n[5] Clear folder..." -ForegroundColor Yellow
 
 $folders = @(
     "C:\Program Files\Microsoft Office",
@@ -99,7 +99,7 @@ foreach ($f in $folders) {
 # -------------------------------
 # 6. INSTALL 7-ZIP
 # -------------------------------
-Write-Host "`n[6] Cài 7-Zip..." -ForegroundColor Yellow
+Write-Host "`n[6] SetUp 7-Zip..." -ForegroundColor Yellow
 
 $toolPath = "D:\Tool"
 $installer = "$toolPath\7zip.exe"
@@ -112,13 +112,13 @@ $url = "https://www.7-zip.org/a/7z2301-x64.exe"
 
 try {
     Invoke-WebRequest -Uri $url -OutFile $installer
-    Write-Host "✅ Tải xong 7-Zip"
+    Write-Host "✅ Download xong 7-Zip"
 
     Start-Process -FilePath $installer -ArgumentList "/S" -Wait
-    Write-Host "✅ Đã cài 7-Zip"
+    Write-Host "✅ Done 7-Zip"
 
 } catch {
-    Write-Host "❌ Lỗi tải/cài: $_"
+    Write-Host "❌ Error Download/Setup: $_"
 }
 
 # -------------------------------
@@ -131,6 +131,6 @@ Remove-Item "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
 # DONE
 # -------------------------------
 Write-Host "`n🔥 HOAN TAT!" -ForegroundColor Green
-Write-Host "👉 Bạn có thể kiểm tra lại trong Programs and Features" -ForegroundColor Cyan
+Write-Host "👉 |check on Programs and Features" -ForegroundColor Cyan
 
 Pause
