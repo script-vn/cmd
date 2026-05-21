@@ -56,7 +56,7 @@ if (Test-Path $chromePath1) {
 if ($chromePath) {
 
     $urls = @(
-        "https://chrome.google.com/webstore/detail/office-editing-for-docs/aohghmighlieiainnegkcijnfilokake",
+        "https://chromewebstore.google.com/detail/office-editing-for-docs-s/gbkeegbaiigmenfmjfclcdgdpimamgkj",
         "https://chromewebstore.google.com/detail/google-scholar-pdf-reader/dahenjhkoodjbpjheillcadbppiidmhp"
     )
 
