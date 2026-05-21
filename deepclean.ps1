@@ -72,20 +72,48 @@ if ($chromePath) {
 # -------------------------------
 # 3. Open Default Apps Settings
 # -------------------------------
-Write-Host "`n[3] Set Chrome as default..." -ForegroundColor Yellow
 
-Start-Process "ms-settings:defaultapps"
+Write-Host "=== 🌐 AUTO SET DEFAULT APP (CHROME) ===" -ForegroundColor Cyan
 
-Write-Host "`n👉 Gợi ý cần làm (bắt buộc thủ công):"
-Write-Host "   • Chọn Chrome làm Default Browser"
-Write-Host "   • Set Chrome cho:"
-Write-Host "       .pdf"
-Write-Host "       .docx"
-Write-Host "       .xlsx"
-Write-Host "       .pptx"
+# -------------------------------
+# 1. Tạo file mẫu
+# -------------------------------
+$tempPath = "$env:TEMP\DefaultTest"
+if (!(Test-Path $tempPath)) {
+    New-Item -ItemType Directory -Path $tempPath | Out-Null
+}
+
+# tạo file mẫu
+Set-Content "$tempPath\test.pdf" "test"
+Set-Content "$tempPath\test.docx" "test"
+Set-Content "$tempPath\test.xlsx" "test"
+Set-Content "$tempPath\test.pptx" "test"
+
+# -------------------------------
+# 2. Function mở file + yêu cầu chọn Chrome
+# -------------------------------
+function Set-Default($file, $ext) {
+
+    Write-Host "`n👉 Đang set mặc định cho .$ext" -ForegroundColor Yellow
+    Write-Host "➡ Chọn: Google Chrome + tick 'Always use this app'" -ForegroundColor Green
+
+    Start-Process $file
+
+    Pause
+}
+
+# -------------------------------
+# 3. Lần lượt từng loại file
+# -------------------------------
+Set-Default "$tempPath\test.pdf" "pdf"
+Set-Default "$tempPath\test.docx" "docx"
+Set-Default "$tempPath\test.xlsx" "xlsx"
+Set-Default "$tempPath\test.pptx" "pptx"
 
 # -------------------------------
 # DONE
 # -------------------------------
-Write-Host "`n✅ DONE ✅" -ForegroundColor Green
+Write-Host "`n✅ DONE - Chrome đã được gán mặc định!" -ForegroundColor Cyan
+
 Pause
+
