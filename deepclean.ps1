@@ -116,10 +116,6 @@ foreach ($f in $files) {
 Write-Host "`n📂 Opening folder..." -ForegroundColor Yellow
 Start-Process $toolPath
 
-Write-Host "`n👉 Bạn chỉ cần:"
-Write-Host "   Right click từng file → Open with → Google Chrome"
-Write-Host "   Tick: Always use this app"
-
 Pause
 
 
