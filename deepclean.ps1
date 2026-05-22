@@ -73,47 +73,53 @@ if ($chromePath) {
 # 3. Open Default Apps Settings
 # -------------------------------
 
-Write-Host "=== 🌐 AUTO SET DEFAULT APP (CHROME) ===" -ForegroundColor Cyan
+# ==========================================
+# CREATE TEST FILES FOR DEFAULT APP SETTING
+# ==========================================
+
+Write-Host "=== 📁 CREATE TEST FILES ===" -ForegroundColor Cyan
 
 # -------------------------------
-# 1. Tạo file mẫu
+# 1. Tạo thư mục Tool
 # -------------------------------
-$tempPath = "$env:TEMP\DefaultTest"
-if (!(Test-Path $tempPath)) {
-    New-Item -ItemType Directory -Path $tempPath | Out-Null
-}
+$toolPath = "D:\Tool"
 
-# tạo file mẫu
-Set-Content "$tempPath\test.pdf" "test"
-Set-Content "$tempPath\test.docx" "test"
-Set-Content "$tempPath\test.xlsx" "test"
-Set-Content "$tempPath\test.pptx" "test"
-
-# -------------------------------
-# 2. Function mở file + yêu cầu chọn Chrome
-# -------------------------------
-function Set-Default($file, $ext) {
-
-    Write-Host "`n👉 Đang set mặc định cho .$ext" -ForegroundColor Yellow
-    Write-Host "➡ Chọn: Google Chrome + tick 'Always use this app'" -ForegroundColor Green
-
-    Start-Process $file
-
-    Pause
+if (!(Test-Path $toolPath)) {
+    New-Item -ItemType Directory -Path $toolPath | Out-Null
+    Write-Host "✅ Created D:\Tool"
 }
 
 # -------------------------------
-# 3. Lần lượt từng loại file
+# 2. Tạo file theo yêu cầu
 # -------------------------------
-Set-Default "$tempPath\test.pdf" "pdf"
-Set-Default "$tempPath\test.docx" "docx"
-Set-Default "$tempPath\test.xlsx" "xlsx"
-Set-Default "$tempPath\test.pptx" "pptx"
+$files = @(
+    "pdf.pdf",
+    "docx.docx",
+    "xlsx.xlsx",
+    "pptx.pptx"
+)
+
+foreach ($f in $files) {
+    $fullPath = Join-Path $toolPath $f
+
+    if (!(Test-Path $fullPath)) {
+        New-Item -ItemType File -Path $fullPath | Out-Null
+        Write-Host "✅ Created: $f"
+    } else {
+        Write-Host "⚠ Exists: $f"
+    }
+}
 
 # -------------------------------
-# DONE
+# 3. Mở thư mục Tool
 # -------------------------------
-Write-Host "`n✅ DONE - Chrome đã được gán mặc định!" -ForegroundColor Cyan
+Write-Host "`n📂 Opening folder..." -ForegroundColor Yellow
+Start-Process $toolPath
+
+Write-Host "`n👉 Bạn chỉ cần:"
+Write-Host "   Right click từng file → Open with → Google Chrome"
+Write-Host "   Tick: Always use this app"
 
 Pause
+
 
