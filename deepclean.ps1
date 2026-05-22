@@ -14,9 +14,11 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 
 
 $slmgr = "$env:SystemRoot\System32\slmgr.vbs"
+
 cscript //nologo $slmgr /upk
 cscript //nologo $slmgr /cpky
-cscript //nologo $env:SystemRoot\System32\slmgr.vbs /dli
+
+cscript //nologo $env:SystemRoot\System32\slmgr.vbs /dlv
 
 Write-Host "=== 🚀 SETUP TOOL & CHROME ===" -ForegroundColor Cyan
 
