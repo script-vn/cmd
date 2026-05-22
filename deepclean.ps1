@@ -70,6 +70,12 @@ if ($chromePath) {
 }
 
 # -------------------------------
+# 4. Mở Programs & Features
+# -------------------------------
+Write-Host "`n📂 Opening Programs & Features..." -ForegroundColor Yellow
+Start-Process "appwiz.cpl"
+
+# -------------------------------
 # 3. Open Default Apps Settings
 # -------------------------------
 
